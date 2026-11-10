@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { emptyState, parseMoney, parseCSV, importCSV, summarize, classify, effective, correctTransaction, calculateScenario, rentCandidates, askQuestion, getIncome, getExpenses, getCategorySpending, getLargestExpenses, getSurplus } from '../docs/engine.js';
 import { loadState, saveState, clearState, STORAGE_KEY } from '../docs/storage.js';
-const fixture = name => readFile(new URL(`../CompassProto1.0/${name}`, import.meta.url), 'utf8');
+const fixture = name => readFile(new URL(`../fixtures/${name}`, import.meta.url), 'utf8');
 const checking = await fixture('synthetic_checking_2026_Jan-Jun.csv');
 const savings = await fixture('synthetic_savings_2026_Jan-Jun.csv');
 const expected = JSON.parse(await fixture('expected_monthly_totals.json'));

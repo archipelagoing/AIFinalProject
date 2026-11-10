@@ -1,6 +1,6 @@
 # Compass — GitHub Pages prototype
 
-This is the browser implementation of the core workflow in [`ProtoToDo.md`](../CompassProto1.0/ProtoToDo.md). The original Streamlit/SQLite specification remains a separate local-app plan. This edition is dependency-free HTML, CSS, and JavaScript, with browser localStorage replacing SQLite. No Python server, cloud AI, account, or API key is used by the published app.
+This is the browser implementation of the core workflow in [`ProtoToDo.md`](../archive/alpha-0.1/ProtoToDo.md). The implemented Python/Streamlit application is separate; see the [repository guide](../REPOSITORY_GUIDE.md). This edition is dependency-free HTML, CSS, and JavaScript, with browser localStorage replacing SQLite. No Python server, cloud AI, account, or API key is used by the published app.
 
 ## Run locally
 
@@ -22,7 +22,7 @@ npm test
 
 Tests cover all 164 reference classifications, six monthly totals, integer cents, malformed and duplicate imports, conflict handling, refund/transfer exclusions, corrections, saved-state reopening/deletion, five question intents, and the exact May scenarios. Test oracles stay outside `docs/` and are never inputs to production calculations.
 
-The published demo, source evidence, category correction/recalculation, reload persistence, rent scenarios, June unresolved warning, and a roughly 520-pixel layout were verified in native Chrome on 2026-11-10. See [BROWSER_QA.md](../CompassProto1.0/BROWSER_QA.md) in the source repository. Uploaded-file picker errors, actual confirmed browser deletion, physical-phone testing, and full keyboard/screen-reader coverage remain pending. Passing unit tests is not evidence that these remaining checks passed.
+The published demo, source evidence, category correction/recalculation, reload persistence, rent scenarios, June unresolved warning, and a roughly 520-pixel layout were verified in native Chrome on 2026-11-10. See [BROWSER_QA.md](../archive/alpha-0.1/BROWSER_QA.md) in the source repository. Uploaded-file picker errors, actual confirmed browser deletion, physical-phone testing, and full keyboard/screen-reader coverage remain pending. Passing unit tests is not evidence that these remaining checks passed.
 
 ## Deploy from the main repository
 

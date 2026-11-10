@@ -3,9 +3,9 @@ name: Python contracts, imports, and fixtures
 on:
   push:
     branches: [main]
-    paths: ['app.py', 'compass/**', 'fixtures/**', 'scripts/**', 'tests/python/**', 'requirements*.txt', 'pyproject.toml', '.streamlit/**', '.github/workflows/python.yml']
+    paths: ['app.py', 'compass/**', 'fixtures/**', 'scripts/**', 'tests/python/**', 'requirements*.txt', 'COMPASS_ENGINEERING_PLAN.md', 'COMPASS_COVERAGE_MATRIX.csv', 'pyproject.toml', '.streamlit/**', '.github/workflows/python.yml']
   pull_request:
-    paths: ['app.py', 'compass/**', 'fixtures/**', 'scripts/**', 'tests/python/**', 'requirements*.txt', 'pyproject.toml', '.streamlit/**', '.github/workflows/python.yml']
+    paths: ['app.py', 'compass/**', 'fixtures/**', 'scripts/**', 'tests/python/**', 'requirements*.txt', 'COMPASS_ENGINEERING_PLAN.md', 'COMPASS_COVERAGE_MATRIX.csv', 'pyproject.toml', '.streamlit/**', '.github/workflows/python.yml']
   workflow_dispatch:
 
 permissions:

@@ -89,6 +89,19 @@ def test_offline_secret_inspection_reports_lines_without_values():
     assert secret_lines("Set API_KEY locally; do not commit keys") == []
 
 
+def test_ticket_matrix_is_validated_separately_from_financial_csv(tmp_path):
+    from scripts.audit_privacy import is_planning_matrix
+
+    plan = ROOT / "COMPASS_ENGINEERING_PLAN.md"
+    matrix = ROOT / "COMPASS_COVERAGE_MATRIX.csv"
+    assert is_planning_matrix(matrix, plan)
+    invalid = tmp_path / matrix.name
+    invalid.write_text("date,description,amount,account,transaction_id\n2026-05-01,Private,-1,Checking,a\n")
+    assert not is_planning_matrix(invalid, plan)
+    invalid.write_text(matrix.read_text().replace("CMP-1112-D1-03", "CMP-9999-D1-01", 1))
+    assert not is_planning_matrix(invalid, plan)
+
+
 def test_clean_ui_release_story_and_confirmed_delete(monkeypatch, tmp_path):
     from streamlit.testing.v1 import AppTest
 

@@ -1,6 +1,6 @@
 # Phase 5 — Quality, privacy, release
 
-Completed on 2026-11-10 for the local Compass Alpha 0.1 release candidate. All nine required P0-B checks and the optional UI/integration item have evidence below. Later sprint features and the limits described here remain deferred. The [root README](../README.md) provides installation, demo, schema, formulas, verification, deletion and privacy instructions.
+Completed on 2026-11-10 for the local Compass Alpha 0.1 release candidate. All nine required P0-B checks and the optional UI/integration item have evidence below. Later sprint features and the limits described here remain deferred. The [root README](../../README.md) provides installation, demo, schema, formulas, verification, deletion and privacy instructions.
 
 ## Verification
 
@@ -52,7 +52,7 @@ python -m pytest -q
 npm test
 ```
 
-Follow the [root README browser-tooling commands](../README.md#release-smoke-and-recorded-demo) for `scripts/release_smoke.py` and `--record`. The script owns a temporary database and browser profile, never the normal workspace. Video uses eight timed checkpoints; mobile/deletion checks follow the recording. Reports/screenshots are generated in ignored `artifacts/release/`. CI runs Python 3.11/3.12 contract/privacy checks plus a Chromium smoke job, and publishes only fictional smoke artifacts.
+Follow the [root README browser-tooling commands](../../README.md#release-smoke-and-recorded-demo) for `scripts/release_smoke.py` and `--record`. The script owns a temporary database and browser profile, never the normal workspace. Video uses eight timed checkpoints; mobile/deletion checks follow the recording. Reports/screenshots are generated in ignored `artifacts/release/`. CI runs Python 3.11/3.12 contract/privacy checks plus a Chromium smoke job, and publishes only fictional smoke artifacts.
 
 ## Known limits
 

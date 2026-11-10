@@ -3,9 +3,9 @@ name: Test and deploy Compass to GitHub Pages
 on:
   push:
     branches: [main]
-    paths: ['docs/**', 'tests/**', 'package.json', 'CompassProto1.0/*.csv', 'CompassProto1.0/*.json', '.github/workflows/pages.yml']
+    paths: ['docs/**', 'tests/**', 'package.json', 'fixtures/**', '.github/workflows/pages.yml']
   pull_request:
-    paths: ['docs/**', 'tests/**', 'package.json', 'CompassProto1.0/*.csv', 'CompassProto1.0/*.json', '.github/workflows/pages.yml']
+    paths: ['docs/**', 'tests/**', 'package.json', 'fixtures/**', '.github/workflows/pages.yml']
   workflow_dispatch:
 
 permissions:

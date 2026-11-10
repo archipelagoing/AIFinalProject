@@ -141,11 +141,9 @@ def test_account_scoped_identity_and_foreign_keys(transaction):
     conn.close()
 
 
-def test_fixture_copies_are_identical_and_readable():
+def test_canonical_fixtures_are_readable():
     for name in (*DEMO_STATEMENTS, "synthetic_ground_truth.csv", "expected_monthly_totals.json"):
-        copied = (ROOT / "fixtures" / name).read_bytes()
-        assert copied == (ROOT / "CompassProto1.0" / name).read_bytes()
-        assert copied.decode("utf-8")
+        assert (ROOT / "fixtures" / name).read_bytes().decode("utf-8")
     assert [inspect_demo_statement(ROOT / "fixtures" / name)["Transactions"] for name in DEMO_STATEMENTS] == [158, 6]
 
 

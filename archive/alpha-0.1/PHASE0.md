@@ -30,7 +30,7 @@ The existing root `.gitignore` already protects `.venv`, `.local/`, `*.db`, `*.s
 
 ## Run and test
 
-Use the [root README](../README.md#run-the-local-python-foundation) for macOS/Linux and Windows virtual-environment commands. Start from the repository root with `streamlit run app.py`. The setup screen initializes an empty local SQLite schema and validates the two fictional statement files; it does not import transactions or show hard-coded financial answers.
+Use the [root README](../../README.md#run-the-local-python-foundation) for macOS/Linux and Windows virtual-environment commands. Start from the repository root with `streamlit run app.py`. The setup screen initializes an empty local SQLite schema and validates the two fictional statement files; it does not import transactions or show hard-coded financial answers.
 
 After activating the virtual environment:
 

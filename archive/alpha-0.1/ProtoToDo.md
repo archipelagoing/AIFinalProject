@@ -1,8 +1,8 @@
 # Compass Alpha 0.1 — Implementation TODO
 
-> **Two implementations:** The browser prototype lives in [`../docs/`](../docs/README.md). The repository-root Python/Streamlit application implements phases 0–5, ending with [release checks](PHASE5.md). Checkboxes below record Alpha 0.1 Python requirements; separate browser evidence remains at the end of this file.
+> **Two implementations:** The browser prototype lives in [`../docs/`](../../docs/README.md). The repository-root Python/Streamlit application implements phases 0–5, ending with [release checks](PHASE5.md). Checkboxes below record Alpha 0.1 Python requirements; separate browser evidence remains at the end of this file.
 
-**Status (2026-11-10):** Python phases 0–5 completed and verified for Alpha 0.1; see the linked phase reports and demo for evidence and limits. **Current direction:** Alpha 0.2 makes a branded guessing/reveal/reflection audit the signature journey. Use the updated [scope](SCOPE.md), [brand guide](../BRAND_IDENTITY.md), and [four-week developer plan](../DEVELOPMENT_PLAN.md) for new work. Their packages are planned, not completed by this historical checklist.
+**Status (2026-11-10):** Python phases 0–5 completed and verified for Alpha 0.1; see the linked phase reports and demo for evidence and limits. **Current direction:** Alpha 0.2 makes a branded guessing/reveal/reflection audit the signature journey. Use the updated [scope](../../README.md), [brand guide](../../README.md), and [four-week developer plan](../../COMPASS_ENGINEERING_PLAN.md) for new work. Their packages are planned, not completed by this historical checklist.
 
 The older Sprint 1/2 deferrals below remain historical backlog context. The new scope explicitly promotes, timeboxes or defers those items; its weekly priorities supersede the former roadmap. Preserve completed phase evidence when implementing the new direction.
 

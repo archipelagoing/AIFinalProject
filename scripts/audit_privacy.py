@@ -2,6 +2,7 @@
 
 import argparse
 import ast
+import csv
 import importlib.metadata
 import json
 from pathlib import Path
@@ -29,19 +30,46 @@ def secret_lines(text: str) -> list[int]:
             if any(re.search(pattern, line) for pattern in SECRET_PATTERNS)]
 
 
+def is_planning_matrix(path: Path, plan: Path) -> bool:
+    """Allow the declared ticket matrix, not arbitrary financial CSV uploads."""
+    fields = ["requirement_id", "requirement_description", "ticket_id", "mapping_status",
+              "verification_status", "automated_test_id", "evidence_url"]
+    try:
+        tickets = set(re.findall(r"^- \[[ xX]\] \*\*(CMP-\d{4}-D[1-4]-\d{2})\b", plan.read_text(), re.M))
+        with path.open(encoding="utf-8-sig", newline="") as source:
+            reader = csv.DictReader(source, strict=True)
+            if reader.fieldnames != fields:
+                return False
+            rows = list(reader)
+        return bool(rows) and len(tickets) == 96 and all(
+            None not in row and all(value is not None for value in row.values())
+            and re.fullmatch(r"REQ-(?:0[1-9]|1[0-2])", row["requirement_id"])
+            and row["ticket_id"] in tickets
+            and row["requirement_description"].strip()
+            and row["mapping_status"].strip() and row["verification_status"].strip()
+            for row in rows)
+    except (OSError, UnicodeError, csv.Error):
+        return False
+
+
 def audit(root: Path = ROOT) -> dict:
     tracked = subprocess.run(["git", "ls-files", "-z"], cwd=root, capture_output=True, check=True).stdout.decode().split("\0")
     findings = []
     scanned = 0
-    csv_count = 0
+    csv_count = planning_csv_count = 0
     canonical = {name: (root / "fixtures" / name).read_bytes() for name in FICTIONAL_CSV_NAMES}
     for name in filter(None, tracked):
         path = root / name
         if not path.is_file():  # Unrelated local deletions are not part of this release.
             continue
         if path.suffix == ".csv":
-            csv_count += 1
-            if name not in {f"{folder}/{filename}" for folder in ("fixtures", "CompassProto1.0", "docs/demo") for filename in canonical} or path.read_bytes() != canonical.get(path.name):
+            if name == "COMPASS_COVERAGE_MATRIX.csv":
+                planning_csv_count += 1
+                if not is_planning_matrix(path, root / "COMPASS_ENGINEERING_PLAN.md"):
+                    findings.append({"path": name, "reason": "Planning CSV has invalid schema or unknown ticket references"})
+            elif name in {f"{folder}/{filename}" for folder in ("fixtures", "docs/demo") for filename in canonical} and path.read_bytes() == canonical.get(path.name):
+                csv_count += 1
+            else:
                 findings.append({"path": name, "reason": "CSV is not a matching approved fictional fixture"})
         if (path.suffix in {".db", ".sqlite", ".sqlite3"} or path.name.startswith(".env")
                 or name.startswith(("private-uploads/", ".local/", ".venv/"))
@@ -68,7 +96,7 @@ def audit(root: Path = ROOT) -> dict:
             if path.name != "ollama.py" and any(name.split(".")[0] in {"socket", "requests", "http", "urllib", "httpx", "boto3", "openai"} for name in names):
                 findings.append({"path": str(path.relative_to(root)), "line": node.lineno, "reason": "Review new network-capable production import"})
     return {"ok": not findings, "tracked_text_files_scanned": scanned,
-            "approved_fictional_csv_copies": csv_count, "findings": findings,
+            "approved_fictional_csv_copies": csv_count, "planning_csv_files": planning_csv_count, "findings": findings,
             "scope": "Current tracked files and production network imports; heuristic inspection, not a history scan or security certification.",
             "dependencies": dict(sorted((dist.metadata["Name"], dist.version) for dist in importlib.metadata.distributions()))}
 

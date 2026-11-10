@@ -12,7 +12,7 @@ if sys.version_info < (3, 11):
 
 import streamlit as st
 
-from compass import analytics, classification, db, importer
+from compass import analytics, classification, db, importer, ollama, questions
 from compass.contracts import Transaction, TransactionType, format_money
 from compass.mapping import ColumnMapping
 
@@ -54,6 +54,7 @@ def evidence_rows(rows: tuple[Transaction, ...] | list[Transaction], imports: di
         "Category": row.effective_category,
         "Corrected": row.has_correction,
         "Source ID": row.source_transaction_id or "(not supplied)",
+        "Local record ID": row.id,
         "Source row": row.source_row_number,
         "File": imports[row.import_id]["filename"],
         "Import SHA-256": imports[row.import_id]["sha256"],
@@ -80,6 +81,7 @@ def show_snapshot(connection: sqlite3.Connection) -> None:
     dates = sorted(row.posted_date for row in summary.rows)
     st.warning(f"Activity dates: {dates[0]} through {dates[-1]}. Full statement coverage is unverified; this month may be incomplete. Import any missing statements before relying on this snapshot.")
     st.caption("Verified means classified, not reconciled to a bank balance. Surplus is not available cash.")
+    show_quality(summary)
     unknown = [row for row in summary.excluded_rows if row.effective_type == TransactionType.UNKNOWN]
     if unknown:
         st.warning(f"{len(unknown)} unresolved transaction(s): {format_money(sum(abs(row.amount_cents) for row in unknown))} absolute value excluded from verified totals.")
@@ -117,6 +119,66 @@ def show_snapshot(connection: sqlite3.Connection) -> None:
         st.write("Predicted classification: " + selected.predicted_type.value + " / " + selected.predicted_category)
         st.write("Rule: " + classification.classify(selected.description, selected.amount_cents).explanation)
         st.caption(f"Stable local record ID: {selected.id}; account identity: {selected.account_id}.")
+    show_questions(transactions, imports, month)
+
+
+def show_quality(summary: analytics.MonthSummary) -> None:
+    quality = analytics.data_quality(summary)
+    st.write(f"Classification review: {quality.reviewed_rows} reviewed rows / {quality.unreviewed_rows} unreviewed rows. Reviewed means a saved type/category override; restoring the rule marks the row unreviewed.")
+    st.caption(f"Unresolved value: {format_money(quality.unknown_absolute_cents)} absolute; {format_money(quality.unknown_outflow_cents)} outflows and {format_money(quality.unknown_inflow_cents)} inflows. Covered activity: {quality.covered_start} through {quality.covered_end}.")
+
+
+def show_questions(transactions, imports: dict, selected_month: str) -> None:
+    st.subheader("Ask Compass")
+    st.caption("Ask one question for one imported month. Without a month, the selected snapshot month is used. All imported accounts are included. Answers recalculate from current classifications on every rerun.")
+    with st.expander("Supported questions"):
+        for example in questions.EXAMPLES:
+            st.write(example)
+        st.caption("Use exact categories from the table. Largest expenses defaults to 5, accepts 1–20, and ranks expense outflows without refunds.")
+    with st.expander("Optional local Ollama routing"):
+        enabled = st.checkbox("Use local Ollama intent routing", key="ollama_enabled")
+        model = st.text_input("Installed local model name", max_chars=120, key="ollama_model")
+        confirmed = st.checkbox("I disabled cloud features in the local Ollama server", key="ollama_local_only")
+        st.caption("Set OLLAMA_NO_CLOUD=1 for the Ollama server and restart it before enabling. Requests use only 127.0.0.1:11434; remote models are rejected. Only the question and validated intent are sent. The model does no arithmetic. Unsupported questions still require clarification; failures fall back within a 4-second routing deadline.")
+    with st.form("ask_compass"):
+        question = st.text_input("Your question", max_chars=500, key="ask_input")
+        submitted = st.form_submit_button("Ask Compass")
+    if submitted:
+        # Persist the question, never a cached monetary answer or a model result.
+        st.session_state["asked_question"] = question
+        try:
+            _, status = ollama.route(question, transactions, selected_month, model=model,
+                                     enabled=enabled, local_only_confirmed=confirmed)
+            st.session_state["routing_status"] = status
+        except ValueError:
+            st.session_state["routing_status"] = "Clarification needed"
+    if "asked_question" not in st.session_state:
+        return
+    st.write("Question: " + st.session_state["asked_question"])
+    try:
+        request = questions.parse_question(st.session_state["asked_question"], transactions, selected_month)
+        answer = questions.execute(transactions, request)
+    except ValueError as error:
+        st.warning(str(error))
+        st.info("Examples: " + " · ".join(questions.EXAMPLES))
+        return
+    st.caption(st.session_state.get("routing_status", "Deterministic routing") + "; current filters independently validated on this rerun.")
+    st.metric("Ask Compass result", format_money(answer.amount_cents))
+    filters = f"Tool: {request.tool}; month: {request.month}; accounts: all imported accounts"
+    if request.category is not None:
+        filters += f"; category: {request.category}"
+    if request.tool == "get_largest_expenses":
+        filters += f"; requested count: {request.limit}; returned: {len(answer.included_rows)}; ties: amount, date, local record ID"
+    st.write(filters)
+    st.write(f"Query period (inclusive): {answer.start_date} through {answer.end_date}. Covered activity: {answer.covered_start} through {answer.covered_end}.")
+    st.write(f"{answer.formula} = {format_money(answer.amount_cents)}. Included rows: {len(answer.included_rows)}.")
+    st.warning("Full statement coverage is unverified; this month may be incomplete. Classified totals are not bank-balance reconciled. Surplus is not available cash.")
+    show_quality(analytics.summarize_month(transactions, request.month))
+    with st.expander("Answer evidence — included source rows", expanded=True):
+        st.dataframe(evidence_rows(answer.included_rows, imports), hide_index=True)
+    with st.expander("Answer evidence — month-wide excluded transfers and unknowns"):
+        st.caption("These month-wide exclusions are separate from category/count filters. Unknowns never enter verified totals; transfers never enter income or expenses.")
+        st.dataframe(evidence_rows(answer.excluded_rows, imports), hide_index=True)
 
 
 def show_review(connection: sqlite3.Connection, summary: analytics.MonthSummary) -> None:
@@ -207,7 +269,7 @@ def mapping_controls(upload) -> tuple[ColumnMapping | None, bool, str]:
 def main() -> None:
     st.set_page_config(page_title="Compass — local financial snapshot", page_icon="🧭")
     st.title("Compass Alpha 0.1")
-    st.caption("Private, local-first financial assistant · Phase 2 import and review")
+    st.caption("Private, local-first financial assistant · Phase 3 snapshot and Ask Compass")
     st.warning("All bundled demo statements are fictional. This experimental app is not financial advice.")
     st.caption("CSV files are processed locally and stored in SQLite. No cloud model or API key is required. Use fictional data while evaluating this experimental app.")
     database_path = Path(os.environ.get("COMPASS_DB_PATH", str(ROOT / ".local" / "compass.db")))
@@ -249,7 +311,7 @@ def main() -> None:
         st.write("Positive signed amounts are inflows; negative amounts are outflows. Money is stored as integer cents and dates as ISO YYYY-MM-DD.")
         st.write("Transaction types: " + ", ".join(classification.TRANSACTION_TYPES) + ". Categories are separate from types; transfers and unknowns are excluded from verified totals.")
         st.write("Original amount, date, description, account, source IDs, row data, and import metadata are preserved. Classification changes are stored separately.")
-    st.caption("Ask Compass and What If? remain later Python phases. Evaluation files never supply the app's financial answers.")
+    st.caption("What If? remains a later Python phase. Evaluation files never supply the app's financial answers.")
 
 
 if __name__ == "__main__":

@@ -1,6 +1,6 @@
 # Compass Alpha 0.1
 
-> **Implementation status:** The root-level Python/Streamlit [Phase 0 foundation](PHASE0.md), [Phase 1 import/snapshot](PHASE1.md), and [Phase 2 complete importer/review](PHASE2.md) are implemented and tested. Run with the commands in the [root README](../README.md#run-the-local-python-foundation). The separate GitHub Pages prototype in [`../docs/`](../docs/README.md) uses JavaScript and browser storage.
+> **Implementation status:** The root-level Python/Streamlit [Phase 0 foundation](PHASE0.md), [Phase 1 import/snapshot](PHASE1.md), [Phase 2 complete importer/review](PHASE2.md), and [Phase 3 snapshot/Ask Compass](PHASE3.md) are implemented and tested. Run with the commands in the [root README](../README.md#run-the-local-python-foundation). The separate GitHub Pages prototype in [`../docs/`](../docs/README.md) uses JavaScript and browser storage.
 
 **A private, local-first financial assistant with an inspectable What If? calculator.**
 

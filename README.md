@@ -6,7 +6,7 @@
 
 ## Run the local Python foundation
 
-**Phases 0–2 are implemented:** import fictional checking and savings statements into local SQLite, review and correct classifications, and inspect recalculated monthly/category totals with original source evidence. Duplicate/overlap warnings and explicit third-party CSV column mapping are included. Python question routing and What If? remain later work. The separate [GitHub Pages prototype](https://archipelagoing.github.io/AIFinalProject/) remains available.
+**Phases 0–3 are implemented:** import fictional checking and savings statements into local SQLite, review classifications, inspect monthly/category totals and data quality, and use five deterministic Ask Compass tools with source-row evidence. Duplicate/overlap warnings, explicit CSV mapping, and optional bounded local Ollama routing are included. What If? remains Phase 4 work. The separate [GitHub Pages prototype](https://archipelagoing.github.io/AIFinalProject/) remains available.
 
 Requires **Python 3.11+**. Fresh-environment verification used Python 3.12.2, Streamlit 1.67.0, and pytest 9.2.0. Run these commands from the repository root.
 
@@ -42,7 +42,9 @@ After launching, click **Load fictional checking statement**, then **Load fictio
 
 For uploads, keep each bank/source identity and account label consistent. Use **Map a different CSV layout** for alternate headers, explicit date order, signed amounts with either polarity, or separate debit/credit columns. Review and confirm the chosen interpretation. An existing source ID cannot be overwritten. Cross-file look-alikes are blocked until you verify and explicitly confirm distinct activity; no rows are silently merged or dropped.
 
-See [Phase 2 implementation and verification](CompassProto1.0/PHASE2.md) for import/review behavior, mapping controls, and remaining work. [Phase 1](CompassProto1.0/PHASE1.md) and [Phase 0](CompassProto1.0/PHASE0.md) record the earlier checkpoints. The product pitch below describes the broader planned application.
+Use **Ask Compass** for income, net expenses, category spending, largest expenses, or verified surplus. Try `What was my surplus in June 2026?` or `How much did I spend on Groceries in April 2026?`. Questions without a month follow the selected snapshot month. Answers show filters, calendar dates, actual activity coverage, calculation, included rows, and month-wide excluded transfers/unknowns. Unsupported filters and ambiguous questions ask for clarification. No model is required.
+
+See [Phase 3 implementation and verification](CompassProto1.0/PHASE3.md) for question syntax, optional Ollama setup, evidence, and limitations. [Phase 2](CompassProto1.0/PHASE2.md), [Phase 1](CompassProto1.0/PHASE1.md), and [Phase 0](CompassProto1.0/PHASE0.md) record the earlier checkpoints. The product pitch below describes the broader planned application.
 
 ## A. What Is Compass?
 

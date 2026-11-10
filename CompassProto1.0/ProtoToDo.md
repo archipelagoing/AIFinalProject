@@ -52,13 +52,15 @@
 
 ## Phase 3 — Snapshot and deterministic Ask Compass (2:15–3:00)
 
-- [ ] **P0-A** Month selector, income, net expense, verified surplus, category summary, source-row table. **Pass:** all months reconcile with supplied expected JSON in automated tests.
-- [ ] **P0-B** Show data quality: reviewed/unreviewed rows, unknown dollar amount, covered date range, and warning if month may be incomplete. **Pass:** never label unverified import as bank-balance reconciled.
-- [ ] **P0-A** Implement five tool functions: `get_income`, `get_expenses`, `get_category_spending`, `get_largest_expenses`, `get_surplus`. **Pass:** fixed question test set returns correct amounts and date ranges.
-- [ ] **P0-B** Questions use deterministic parsing/routing when Ollama unavailable; unsupported or ambiguous queries elicit a clarification or supported examples. **Pass:** no invented figures.
-- [ ] **P0-B** Answers show query filters, covered period, included transaction IDs/rows, and excluded unknowns where relevant. **Pass:** clicking/viewing evidence agrees with answer.
-- [ ] **P0-B** UI refresh after edit/import and across Streamlit reruns. **Pass:** no stale cached totals or duplicated inserts.
-- [ ] **P1** Local Ollama structured intent router using explicit tool allowlist, JSON schema validation, bounded inputs, timeout and deterministic fallback. Never ask model to calculate monetary totals. **Pass:** app works with Ollama service stopped.
+- [x] **P0-A** Month selector, income, net expense, verified surplus, category summary, source-row table. **Pass:** all months reconcile with supplied expected JSON in automated tests.
+- [x] **P0-B** Show data quality: reviewed/unreviewed rows, unknown dollar amount, covered date range, and warning if month may be incomplete. **Pass:** never label unverified import as bank-balance reconciled.
+- [x] **P0-A** Implement five tool functions: `get_income`, `get_expenses`, `get_category_spending`, `get_largest_expenses`, `get_surplus`. **Pass:** fixed question test set returns correct amounts and date ranges.
+- [x] **P0-B** Questions use deterministic parsing/routing when Ollama unavailable; unsupported or ambiguous queries elicit a clarification or supported examples. **Pass:** no invented figures.
+- [x] **P0-B** Answers show query filters, covered period, included transaction IDs/rows, and excluded unknowns where relevant. **Pass:** clicking/viewing evidence agrees with answer.
+- [x] **P0-B** UI refresh after edit/import and across Streamlit reruns. **Pass:** no stale cached totals or duplicated inserts.
+- [x] **P1** Local Ollama structured intent router using explicit tool allowlist, JSON schema validation, bounded inputs, timeout and deterministic fallback. Never ask model to calculate monetary totals. **Pass:** app works with Ollama service stopped.
+
+**Phase 3 evidence (2026-11-10):** 215 Python tests and 17 JavaScript tests pass; the independent fixture audit and dependency check pass. Five tools reconcile all six months in integer cents and return period/source evidence. AppTest verifies questions, month filters, source tables, review edits, new/duplicate imports, fresh sessions, and stopped-router fallback. Review counts explicitly mean saved classification overrides. Ollama uses loopback-only requests, schema and filter validation, bounded inputs/responses, timeout and deterministic fallback; model inference and failures were simulated in tests, with no real installed-model smoke test. See [PHASE3.md](PHASE3.md). Next: Phase 4 What If? integration.
 
 ## Phase 4 — What If? engine (3:00–3:45)
 

@@ -77,6 +77,29 @@ def summarize_month(transactions: Iterable[Transaction], month: str) -> MonthSum
 
 
 @dataclass(frozen=True, slots=True)
+class DataQuality:
+    reviewed_rows: int
+    unreviewed_rows: int
+    unknown_absolute_cents: int
+    unknown_outflow_cents: int
+    unknown_inflow_cents: int
+    covered_start: str | None
+    covered_end: str | None
+
+
+def data_quality(summary: MonthSummary) -> DataQuality:
+    """Review means a saved classification override, never balance reconciliation."""
+    reviewed = sum(row.has_correction for row in summary.rows)
+    unknown = [row for row in summary.rows if row.effective_type == TransactionType.UNKNOWN]
+    dates = sorted(row.posted_date for row in summary.rows)
+    return DataQuality(reviewed, len(summary.rows) - reviewed,
+                       validate_cents(sum(abs(row.amount_cents) for row in unknown)),
+                       validate_cents(sum(-row.amount_cents for row in unknown if row.amount_cents < 0)),
+                       validate_cents(sum(row.amount_cents for row in unknown if row.amount_cents > 0)),
+                       dates[0] if dates else None, dates[-1] if dates else None)
+
+
+@dataclass(frozen=True, slots=True)
 class TransferEvidence:
     pairs: tuple[tuple[Transaction, Transaction], ...]
     unmatched: tuple[Transaction, ...]

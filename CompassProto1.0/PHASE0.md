@@ -2,6 +2,8 @@
 
 Implemented and locally verified on 2026-11-10. [ProtoToDo.md](ProtoToDo.md) remains the authoritative implementation checklist.
 
+This is the historical foundation report. [Phase 1](PHASE1.md) now adds statement ingestion, production classification rules, persistence, and the monthly snapshot UI.
+
 ## Delivered structure
 
 ```text

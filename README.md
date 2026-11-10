@@ -6,7 +6,7 @@
 
 ## Run the local Python foundation
 
-**Phase 0 is implemented:** a runnable Streamlit setup screen, local SQLite schema, exact-money and immutable-source contracts, fictional fixtures, and an independent fixture audit. Python CSV ingestion and the full assistant workflow are later phases. The separate [GitHub Pages prototype](https://archipelagoing.github.io/AIFinalProject/) remains available.
+**Phases 0 and 1 are implemented:** import the fictional checking statement or a supported CSV into local SQLite, select a month, and inspect income, net expenses, surplus, and the original source rows. Exact-money contracts, immutable sources, and the independent fixture audit are also in place. Python review/edit UI, transfer reconciliation, question routing, and What If? remain later work. The separate [GitHub Pages prototype](https://archipelagoing.github.io/AIFinalProject/) remains available.
 
 Requires **Python 3.11+**. Fresh-environment verification used Python 3.12.2, Streamlit 1.67.0, and pytest 9.2.0. Run these commands from the repository root.
 
@@ -38,7 +38,9 @@ python -m pytest -q
 
 The standalone audit uses only Python's standard library. Its `--json` option reports exact cents; a mismatch exits with status 1 and never rewrites expected values. Evaluation oracles are never read by the app.
 
-See [Phase 0 implementation and verification](CompassProto1.0/PHASE0.md) for contracts, schema, fixtures, and remaining work. The product pitch below describes the broader planned application.
+After launching, click **Load fictional checking statement**. May 2026 defaults to **$3,700.00 income**, **$2,952.94 net expenses**, and **$747.06 surplus**. Expand the calculation panels to inspect contributing transactions. Restart the app to confirm saved records remain. For an uploaded CSV, choose a bank/source identity that stays the same across that bank's statements; use a different identity for another bank.
+
+See [Phase 1 implementation and verification](CompassProto1.0/PHASE1.md) for atomic-import behavior, counts, source traceability, and remaining work, and [Phase 0](CompassProto1.0/PHASE0.md) for the original foundation. The product pitch below describes the broader planned application.
 
 ## A. What Is Compass?
 

@@ -2,6 +2,7 @@
 
 from dataclasses import dataclass
 from collections.abc import Iterable
+import re
 
 from compass.contracts import Transaction, TransactionType, validate_cents
 
@@ -33,3 +34,29 @@ def aggregate(transactions: Iterable[Transaction]) -> Totals:
     totals = Totals(income, expenses, transfers, unknown)
     validate_cents(totals.surplus_cents)
     return totals
+
+
+@dataclass(frozen=True, slots=True)
+class MonthSummary:
+    month: str
+    rows: tuple[Transaction, ...]
+    totals: Totals
+    income_rows: tuple[Transaction, ...]
+    expense_rows: tuple[Transaction, ...]
+    excluded_rows: tuple[Transaction, ...]
+
+    @property
+    def surplus_rows(self) -> tuple[Transaction, ...]:
+        return self.income_rows + self.expense_rows
+
+
+def summarize_month(transactions: Iterable[Transaction], month: str) -> MonthSummary:
+    if not re.fullmatch(r"\d{4}-(?:0[1-9]|1[0-2])", month, flags=re.ASCII):
+        raise ValueError("Select an imported month in YYYY-MM format.")
+    rows = tuple(row for row in transactions if row.posted_date.startswith(month + "-"))
+    return MonthSummary(
+        month, rows, aggregate(rows),
+        tuple(row for row in rows if row.effective_type == TransactionType.INCOME),
+        tuple(row for row in rows if row.effective_type in (TransactionType.EXPENSE, TransactionType.REFUND)),
+        tuple(row for row in rows if row.effective_type in (TransactionType.TRANSFER, TransactionType.UNKNOWN)),
+    )

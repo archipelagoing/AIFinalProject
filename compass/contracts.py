@@ -113,6 +113,10 @@ class Transaction:
         """Return a fresh copy so nested edits cannot mutate preserved source JSON."""
         return json.loads(self.original_row_json)
 
+    @property
+    def has_correction(self) -> bool:
+        return self.corrected_type is not None or self.corrected_category is not None
+
     def with_classification(self, kind: TransactionType | str, category: str) -> "Transaction":
         kind = validate_classification(kind, category, self.amount_cents)
         return replace(self, corrected_type=kind, corrected_category=category.strip())

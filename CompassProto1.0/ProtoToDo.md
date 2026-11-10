@@ -1,8 +1,8 @@
 # Compass Alpha 0.1 — Implementation TODO
 
-> **Two implementations:** The browser prototype lives in [`../docs/`](../docs/README.md). The repository-root Python/Streamlit application now implements [Phase 0](PHASE0.md). Checkboxes below refer to Python requirements; separate browser evidence remains at the end of this file.
+> **Two implementations:** The browser prototype lives in [`../docs/`](../docs/README.md). The repository-root Python/Streamlit application implements [Phase 0](PHASE0.md) and [Phase 1](PHASE1.md). Checkboxes below refer to Python requirements; separate browser evidence remains at the end of this file.
 
-**Status (2026-11-10):** Python Phase 0 implemented and locally verified; later Python phases remain incomplete. **Target:** local runnable alpha (timeboxes below are estimates). **Source:** Pranav's local-first statement analysis assistant, extended by one deterministic What If? engine.
+**Status (2026-11-10):** Python Phases 0 and 1 implemented and locally verified; later Python phases remain incomplete. **Target:** local runnable alpha (timeboxes below are estimates). **Source:** Pranav's local-first statement analysis assistant, extended by one deterministic What If? engine.
 
 ## Rules and priorities
 
@@ -26,12 +26,14 @@
 
 ## Phase 1 — First vertical slice: import → May summary (0:30–1:30)
 
-- [ ] **P0-A** Parse bundled checking CSV headers `date,description,amount,account,transaction_id`; validate exact required fields and row values. **Pass:** accepted/rejected counts shown; invalid amount/date rejected with row number.
-- [ ] **P0-A** Normalize to signed integer cents; reject NaN, infinity, empty dates, unsupported date strings, and ambiguous amounts. **Pass:** tests cover negatives, decimals, and invalid input.
-- [ ] **P0-A** Create SQLite `imports` and `transactions` with foreign keys, stable internal primary keys, source IDs, row ordinals, import hashes, original raw fields, effective category/type, and correction flags. **Pass:** data persists after process restart.
-- [ ] **P0-A** Import all valid rows atomically; rollback on a failed import rather than leaving partial records. **Pass:** deliberately malformed import doesn't create partial data.
-- [ ] **P0-A** Implement transparent keyword classification; separate payroll, expenses, refunds, transfers, and unresolved transactions. **Pass:** May fixture income = `$3,700.00`, net expenses = `$2,952.94`, surplus = `$747.06` using actual classification logic, not ground-truth lookup.
-- [ ] **P0-A** Show month selector and May snapshot. **Pass:** all three values are visible and traceable to rows.
+- [x] **P0-A** Parse bundled checking CSV headers `date,description,amount,account,transaction_id`; validate exact required fields and row values. **Pass:** accepted/rejected counts shown; invalid amount/date rejected with row number.
+- [x] **P0-A** Normalize to signed integer cents; reject NaN, infinity, empty dates, unsupported date strings, and ambiguous amounts. **Pass:** tests cover negatives, decimals, and invalid input.
+- [x] **P0-A** Create SQLite `imports` and `transactions` with foreign keys, stable internal primary keys, source IDs, row ordinals, import hashes, original raw fields, effective category/type, and correction flags. **Pass:** data persists after process restart.
+- [x] **P0-A** Import all valid rows atomically; rollback on a failed import rather than leaving partial records. **Pass:** deliberately malformed import doesn't create partial data.
+- [x] **P0-A** Implement transparent keyword classification; separate payroll, expenses, refunds, transfers, and unresolved transactions. **Pass:** May fixture income = `$3,700.00`, net expenses = `$2,952.94`, surplus = `$747.06` using actual classification logic, not ground-truth lookup.
+- [x] **P0-A** Show month selector and May snapshot. **Pass:** all three values are visible and traceable to rows.
+
+**Phase 1 evidence (2026-11-10):** Checking import commits 158 rows with original fields, account-scoped IDs, source ordinals and SHA-256 lineage. All six monthly income/expense/surplus regressions and all checking reference classifications pass using production rules. Invalid CSV rows report their ordinal/physical line and reject the whole file; a simulated second-insert database failure also rolls back the first inserted row and import metadata. A separate Python process reopens the database with identical IDs and May totals. Streamlit AppTest verifies visible counts, May metrics/evidence, month changes, safe reimport, reload persistence and actual upload submit/error handling. See [PHASE1.md](PHASE1.md). Next: complete the Phase 2 savings/import-review workflow.
 
 ## Phase 2 — Complete importer and review (1:30–2:15)
 
@@ -139,4 +141,4 @@ Verified by `npm test` (Node 22+; no dependency installation):
 - [x] Successful remote GitHub Pages deployment verified: [live prototype](https://archipelagoing.github.io/AIFinalProject/), [successful workflow](https://github.com/archipelagoing/AIFinalProject/actions/runs/42760426153). Public HTML, JavaScript, CSS, and both demo CSVs match the tested source bytes. An overlapping legacy branch deployment initially served the README; rerunning the configured Actions deployment resolved it.
 - [ ] Recorded 60–90 second demo.
 
-Python Phase 0 is tracked separately above; subsequent Python/SQLite workflows, optional AI work, and later sprints remain incomplete. These browser checks do not assert that the original local-app release gates passed.
+Python Phases 0 and 1 are tracked separately above; subsequent Python/SQLite workflows, optional AI work, and later sprints remain incomplete. These browser checks do not assert that the original local-app release gates passed.

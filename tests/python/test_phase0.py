@@ -200,7 +200,7 @@ def test_streamlit_app_starts_without_script_errors(monkeypatch, tmp_path):
     assert not app.exception, [entry.message for entry in app.exception]
     assert not app.error
     assert any("fictional" in entry.value.lower() for entry in app.warning)
-    assert any("Phase 0" in entry.value for entry in app.info)
+    assert any("No transactions imported yet" in entry.value for entry in app.info)
     assert len(app.table) == 1
     conn = db.connect(path)
     assert conn.execute("SELECT count(*) FROM transactions").fetchone()[0] == 0

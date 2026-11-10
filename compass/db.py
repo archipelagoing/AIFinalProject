@@ -1,4 +1,4 @@
-"""SQLite schema and source-preserving classification updates (no importer yet)."""
+"""SQLite schema, source preservation, and queries shared by imports and reports."""
 
 from dataclasses import asdict
 from datetime import datetime, timezone
@@ -47,6 +47,12 @@ CREATE TABLE IF NOT EXISTS transactions (
 CREATE TRIGGER IF NOT EXISTS immutable_import_source
 BEFORE UPDATE ON imports
 BEGIN SELECT RAISE(ABORT, 'Import source metadata is immutable'); END;
+CREATE VIEW IF NOT EXISTS transaction_details AS
+SELECT *,
+    COALESCE(corrected_type, predicted_type) AS effective_type,
+    COALESCE(corrected_category, predicted_category) AS effective_category,
+    (corrected_type IS NOT NULL OR corrected_category IS NOT NULL) AS has_correction
+FROM transactions;
 """ + f"""
 CREATE TRIGGER IF NOT EXISTS immutable_transaction_source
 BEFORE UPDATE OF {','.join(SOURCE_FIELDS)} ON transactions
@@ -88,6 +94,14 @@ def get_transaction(connection: sqlite3.Connection, transaction_id: str) -> Tran
     if row is None:
         raise KeyError("Transaction not found.")
     return Transaction(**dict(row))
+
+
+def list_transactions(connection: sqlite3.Connection) -> list[Transaction]:
+    return [Transaction(**dict(row)) for row in connection.execute("SELECT * FROM transactions ORDER BY posted_date, id")]
+
+
+def list_imports(connection: sqlite3.Connection) -> list[dict]:
+    return [dict(row) for row in connection.execute("SELECT * FROM imports ORDER BY created_at, id")]
 
 
 def correct_classification(connection: sqlite3.Connection, transaction_id: str, kind: TransactionType | str, category: str) -> Transaction:

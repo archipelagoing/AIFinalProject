@@ -128,7 +128,12 @@ Verified by `npm test` (Node 22+; no dependency installation):
 - [x] Replacement/additional rent, cheaper rent, signed income changes, missing rent, and six-month arithmetic pass exact-cent tests.
 - [x] Saved-state reopening, quota-failure preservation, and removal of only the Compass storage key pass storage-adapter tests.
 - [x] Published demo copies match source statements; production code never reads classification/totals oracles.
-- [ ] Full browser walkthrough including corrections, reload persistence, deletion, keyboard navigation, and mobile layout. Automated browser access was unavailable during initial implementation; HTTP preview readiness alone does not satisfy this gate.
+- [x] Live browser walkthrough: empty state → fictional demo → May summary → evidence-backed question → correction → recalculated answer → reload persistence → restore reference classification. Native Chrome verification on 2026-11-10; see [BROWSER_QA.md](BROWSER_QA.md).
+- [x] Live replacement/additional rent scenarios, missing-confirmation block, shortfall warning, and June $80 unresolved-transaction notice verified in native Chrome.
+- [x] Narrow-screen smoke check at approximately 520 pixels and 100% zoom; navigation, metrics, stacked charts, and dialog inspected. Tab focus and Escape dismissal checked in the clear-data dialog. This does not establish full mobile or accessibility coverage.
+- [ ] Uploaded-file picker and malformed-file/overlap error UX exercised end-to-end in the browser; automated importer coverage already passes.
+- [ ] Actual confirmed browser deletion → reload empty state → demo reimport. Dialog behavior and storage-adapter deletion are verified separately; actual browser deletion remains unchecked.
+- [ ] Physical-phone/narrower-width checks and a complete keyboard-only/screen-reader walkthrough.
 - [x] Successful remote GitHub Pages deployment verified: [live prototype](https://archipelagoing.github.io/AIFinalProject/), [successful workflow](https://github.com/archipelagoing/AIFinalProject/actions/runs/42760426153). Public HTML, JavaScript, CSS, and both demo CSVs match the tested source bytes. An overlapping legacy branch deployment initially served the README; rerunning the configured Actions deployment resolved it.
 - [ ] Recorded 60–90 second demo.
 

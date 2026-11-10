@@ -22,7 +22,7 @@ npm test
 
 Tests cover all 164 reference classifications, six monthly totals, integer cents, malformed and duplicate imports, conflict handling, refund/transfer exclusions, corrections, saved-state reopening/deletion, five question intents, and the exact May scenarios. Test oracles stay outside `docs/` and are never inputs to production calculations.
 
-Browser visual inspection, a full browser persistence walkthrough, and mobile usability still require manual verification. Passing unit tests is not evidence that those checks passed.
+The published demo, source evidence, category correction/recalculation, reload persistence, rent scenarios, June unresolved warning, and a roughly 520-pixel layout were verified in native Chrome on 2026-11-10. See [BROWSER_QA.md](../CompassProto1.0/BROWSER_QA.md) in the source repository. Uploaded-file picker errors, actual confirmed browser deletion, physical-phone testing, and full keyboard/screen-reader coverage remain pending. Passing unit tests is not evidence that these remaining checks passed.
 
 ## Deploy from the main repository
 

@@ -6,7 +6,7 @@
 
 ## Run the local Python foundation
 
-**Phases 0–4 are implemented:** import fictional checking and savings statements into local SQLite, review classifications, inspect monthly/category totals and data quality, ask five supported financial questions, and compare exact-cent What If? scenarios. Duplicate/overlap warnings, explicit CSV mapping, and optional bounded local Ollama routing are included. Phase 5 release/privacy work remains. The separate [GitHub Pages prototype](https://archipelagoing.github.io/AIFinalProject/) remains available.
+**Phases 0–5 are implemented:** import fictional checking and savings statements into local SQLite, review classifications, inspect monthly/category totals and data quality, ask five supported financial questions, compare exact-cent What If? scenarios, and clear local data with confirmation. Duplicate/overlap warnings, explicit CSV mapping, and optional bounded local Ollama routing are included. This is a local alpha release candidate with the limitations below. The separate [GitHub Pages prototype](https://archipelagoing.github.io/AIFinalProject/) remains available; GitHub Pages does not run this Python server.
 
 Requires **Python 3.11+**. Fresh-environment verification used Python 3.12.2, Streamlit 1.67.0, and pytest 9.2.0. Run these commands from the repository root.
 
@@ -33,6 +33,7 @@ The app binds to `127.0.0.1:8501`. It needs no cloud key or Ollama. Verification
 ```sh
 python -m pip check
 python scripts/audit_fixtures.py
+python scripts/audit_privacy.py
 python -m pytest -q
 ```
 
@@ -47,6 +48,50 @@ Use **Ask Compass** for income, net expenses, category spending, largest expense
 Open **What If?**, select the baseline month, and explicitly choose **replace** or **additional** rent. With May and proposed rent `1500.00`, replacement yields **$522.06** monthly surplus; additional rent yields **−$752.94**. The app shows source rent evidence, exact formulas, income/spending adjustments, and six-month static extrapolation. Missing or ambiguous existing rent requires confirmation. Optional savings targets and a six-row table from a user-supplied starting balance are included; no balance is inferred from activity.
 
 See [Phase 4 implementation and verification](CompassProto1.0/PHASE4.md) for scenario behavior and limitations, and [Phase 3](CompassProto1.0/PHASE3.md) for questions and optional Ollama setup. [Phase 2](CompassProto1.0/PHASE2.md), [Phase 1](CompassProto1.0/PHASE1.md), and [Phase 0](CompassProto1.0/PHASE0.md) record the earlier checkpoints. The product pitch below describes the broader planned application.
+
+### Storage, deletion, and privacy boundary
+
+The default database is `.local/compass.db`; set `COMPASS_DB_PATH` before launch to use another local database. The SQLite schema is:
+
+| Table/view | Contents |
+| --- | --- |
+| `imports` | Stable ID, original filename, unique file SHA-256, import timestamp |
+| `import_settings` | Import foreign key, source namespace, explicit column-mapping JSON, distinct-activity confirmation |
+| `transactions` | Stable ID, import foreign key, account/source IDs, row ordinal, ISO date, description, signed integer cents, immutable raw source JSON and predicted labels; separate category/type overrides |
+| `transaction_details` | View exposing effective category/type and correction flag |
+
+Foreign keys and unique identities protect relationships; triggers prevent source-field edits. [Contracts and schema details](CompassProto1.0/README.md#6-data-and-accounting-contracts) describe normalization. No fractional-cent rounding is implicit: inputs with more than two decimal places are rejected. Scenario formulas are `rent_delta = new_rent − existing_rent` for replacement or `new_rent` for additional; `projected_surplus = baseline_surplus + income_adjustment − added_spending − rent_delta`; six-month static change is `6 × projected_surplus`.
+
+To delete imports, open **Privacy and local data**, check the deletion acknowledgment, type **DELETE**, then click **Clear all local data**. This atomically deletes transactions, corrections, import settings and import metadata in the configured database, then resets this session's uploader, questions, scenarios and app caches. Restart to verify the empty state. Compass does not persist uploaded CSV copies. The empty schema and fictional fixtures remain; original files elsewhere on disk are untouched. Close/reload other sessions. This is logical data deletion with SQLite deleted-cell overwriting, not guaranteed erasure from OS backups, snapshots, old SQLite journals or memory.
+
+Default operation sends financial data only between the local browser and loopback Streamlit server. Usage telemetry is disabled; built-in fonts require no external font host. The app has no cloud financial API or cloud model client. Optional Ollama receives the question and validated intent at `127.0.0.1:11434`; disable cloud features in the Ollama server as described in [Phase 3](CompassProto1.0/PHASE3.md). Installing dependencies/browser binaries or downloading models is a separate network action. Browser extensions, OS services, externally changed settings and a misconfigured Ollama daemon are outside this boundary. [Streamlit configuration](https://docs.streamlit.io/develop/api-reference/configuration/config.toml) can be overridden by environment/CLI settings; run from the repo root with the committed settings.
+
+Known limitations: no app authentication or encryption at rest; single-currency USD, CSV-only imports; incomplete statement coverage and unknowns; bounded question grammar; rent may require manual confirmation; hypothetical scenarios are session-only and illustrative; no verified bank balance or financial forecast. Real Ollama inference has not been smoke-tested. The privacy audit is a current-file heuristic inspection, not a Git-history scan, dependency vulnerability scan, or security certification. Use a trusted local machine and fictional data while evaluating.
+
+### Release smoke and recorded demo
+
+[Phase 5 release report](CompassProto1.0/PHASE5.md) documents validation and privacy scope. The [fictional demo](CompassProto1.0/demo/README.md) shows checking/savings import → May snapshot → source-backed question → category correction → replacement/additional rent → actual server restart and persisted correction.
+
+For an isolated real-browser smoke run, install the optional tooling after activating the virtual environment:
+
+macOS / Linux:
+
+```sh
+python -m pip install -r requirements-dev.txt
+PLAYWRIGHT_BROWSERS_PATH=.local/playwright python -m playwright install chromium
+python scripts/release_smoke.py
+```
+
+Windows PowerShell:
+
+```powershell
+python -m pip install -r requirements-dev.txt
+$env:PLAYWRIGHT_BROWSERS_PATH="$PWD/.local/playwright"
+python -m playwright install chromium
+python scripts/release_smoke.py
+```
+
+Add `--record` for a roughly 72-second WebM. The script creates its own temporary database/browser profile, blocks and reports external requests, checks desktop/mobile, restarts the actual server, and tests deletion. It never opens your default database. Screenshots/reports/video go into ignored `artifacts/release/`.
 
 ## A. What Is Compass?
 

@@ -79,25 +79,27 @@
 
 ## Phase 5 — Quality, privacy, release (3:45–5:00+)
 
-- [ ] **P0-B** Unit tests: amount sign, rounding, refund handling, transfers, unknowns, category overrides, date filtering, category totals, What If? pure function. **Pass:** `pytest -q` green.
-- [ ] **P0-B** Import tests: malformed rows, interrupted transaction rollback, duplicate reimport, same-day identical legitimate purchases, conflicting source IDs, reimport after correction. **Pass:** no silent data loss.
-- [ ] **P0-B** Fixture regression tests for all Jan–Jun months against `expected_monthly_totals.json`, plus expected transaction classifications from ground-truth file **only in tests**. **Pass:** all exact cents match; classifier mismatches surfaced rather than concealed.
-- [ ] **P0-B** UI smoke test: checking → savings → May snapshot → question → edit → scenario → restart. **Pass:** every step works in a clean local run.
-- [ ] **P0-B** Clear-all-data confirmation deletes local SQLite records and app-owned persisted uploaded copies/caches, if any. **Pass:** restart yields empty state; bundled synthetic fixtures remain available as fixtures.
-- [ ] **P0-B** Privacy inspection: no network financial-data transmission, no analytics/telemetry, no cloud model API; use local-only Ollama endpoint if enabled. **Pass:** dependencies/configuration reviewed; no secret keys or real statements committed.
-- [ ] **P0-B** `.gitignore` includes `.venv/`, `*.db`, `*.sqlite*`, `.env*`, private uploads, `__pycache__/`, `.pytest_cache/`; ensure synthetic fixture path is not ignored. **Pass:** `git status` shows no sensitive generated artifacts.
-- [ ] **P0-B** README documents install/run, demo steps, schema, exact scenario formulas, test commands, data deletion, limitations, privacy boundary, and known issues. **Pass:** fresh user can follow without oral instructions.
-- [ ] **P0-B** Record 60–90 second demo on fictional data. **Pass:** import → May snapshot → evidence-backed question → correction → replace/add rent → restart shown.
-- [ ] **P1** Visual polish, responsive layout, helpful empty states, optional Ollama integration.
+- [x] **P0-B** Unit tests: amount sign, rounding, refund handling, transfers, unknowns, category overrides, date filtering, category totals, What If? pure function. **Pass:** `pytest -q` green.
+- [x] **P0-B** Import tests: malformed rows, interrupted transaction rollback, duplicate reimport, same-day identical legitimate purchases, conflicting source IDs, reimport after correction. **Pass:** no silent data loss.
+- [x] **P0-B** Fixture regression tests for all Jan–Jun months against `expected_monthly_totals.json`, plus expected transaction classifications from ground-truth file **only in tests**. **Pass:** all exact cents match; classifier mismatches surfaced rather than concealed.
+- [x] **P0-B** UI smoke test: checking → savings → May snapshot → question → edit → scenario → restart. **Pass:** every step works in a clean local run.
+- [x] **P0-B** Clear-all-data confirmation deletes local SQLite records and app-owned persisted uploaded copies/caches, if any. **Pass:** restart yields empty state; bundled synthetic fixtures remain available as fixtures.
+- [x] **P0-B** Privacy inspection: no network financial-data transmission, no analytics/telemetry, no cloud model API; use local-only Ollama endpoint if enabled. **Pass:** dependencies/configuration reviewed; no secret keys or real statements committed.
+- [x] **P0-B** `.gitignore` includes `.venv/`, `*.db`, `*.sqlite*`, `.env*`, private uploads, `__pycache__/`, `.pytest_cache/`; ensure synthetic fixture path is not ignored. **Pass:** `git status` shows no sensitive generated artifacts.
+- [x] **P0-B** README documents install/run, demo steps, schema, exact scenario formulas, test commands, data deletion, limitations, privacy boundary, and known issues. **Pass:** fresh user can follow without oral instructions.
+- [x] **P0-B** Record 60–90 second demo on fictional data. **Pass:** import → May snapshot → evidence-backed question → correction → replace/add rent → restart shown.
+- [x] **P1** Visual polish, responsive layout, helpful empty states, optional Ollama integration.
+
+**Phase 5 evidence (2026-11-10):** 271 Python tests, 17 JavaScript tests, independent fixture/dependency checks, and offline privacy inspection pass. Chromium smoke verifies the full story with actual process restart, a 390×844 mobile layout, confirmed deletion and empty reload; no external browser/backend attempts or uncaught browser errors were observed with Ollama disabled. Deletion rollback/restart/fixture preservation and redacted inspection are automated. A [72.76-second fictional-data demo](demo/README.md), screenshots and successful smoke report are included. README and [PHASE5.md](PHASE5.md) disclose logical-deletion/privacy boundaries and known limits. Optional Ollama protocol/fallback tests use simulated responses; real model inference and physical-phone testing remain follow-ups. All tests/recordings use temporary databases, leaving the user's normal local database untouched.
 
 ## Stop-ship checks (all mandatory)
 
-- [ ] **GATE** All required P0-A and P0-B checks pass or are explicitly documented as unresolved; **do not claim complete alpha if unresolved**.
-- [ ] **GATE** No incorrect or invented financial totals in supplied regression cases.
-- [ ] **GATE** No double-counted internal transfers, refunds as wages, or replacement rent.
-- [ ] **GATE** No silent deletion/merging of distinct source transactions; corrections remain durable.
-- [ ] **GATE** No undisclosed financial-data upload to remote service.
-- [ ] **GATE** All displayed projections labeled illustrative and conditional on inputs.
+- [x] **GATE** All required P0-A and P0-B checks pass or are explicitly documented as unresolved; **do not claim complete alpha if unresolved**.
+- [x] **GATE** No incorrect or invented financial totals in supplied regression cases.
+- [x] **GATE** No double-counted internal transfers, refunds as wages, or replacement rent.
+- [x] **GATE** No silent deletion/merging of distinct source transactions; corrections remain durable.
+- [x] **GATE** No undisclosed financial-data upload to remote service.
+- [x] **GATE** All displayed projections labeled illustrative and conditional on inputs.
 
 ## Explicitly deferred — Sprint 1 (Weeks 1–2)
 

@@ -3,9 +3,9 @@ name: Python contracts, imports, and fixtures
 on:
   push:
     branches: [main]
-    paths: ['app.py', 'compass/**', 'fixtures/**', 'scripts/audit_fixtures.py', 'tests/python/**', 'requirements.txt', 'pyproject.toml', '.streamlit/**', '.github/workflows/python.yml']
+    paths: ['app.py', 'compass/**', 'fixtures/**', 'scripts/**', 'tests/python/**', 'requirements*.txt', 'pyproject.toml', '.streamlit/**', '.github/workflows/python.yml']
   pull_request:
-    paths: ['app.py', 'compass/**', 'fixtures/**', 'scripts/audit_fixtures.py', 'tests/python/**', 'requirements.txt', 'pyproject.toml', '.streamlit/**', '.github/workflows/python.yml']
+    paths: ['app.py', 'compass/**', 'fixtures/**', 'scripts/**', 'tests/python/**', 'requirements*.txt', 'pyproject.toml', '.streamlit/**', '.github/workflows/python.yml']
   workflow_dispatch:
 
 permissions:
@@ -26,4 +26,24 @@ jobs:
       - run: python -m pip install -r requirements.txt
       - run: python -m pip check
       - run: python scripts/audit_fixtures.py
+      - run: python scripts/audit_privacy.py
       - run: python -m pytest -q
+
+  browser-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      PLAYWRIGHT_BROWSERS_PATH: ${{ github.workspace }}/.local/playwright
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -r requirements-dev.txt
+      - run: python -m playwright install --with-deps chromium
+      - run: python scripts/release_smoke.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: fictional-release-smoke
+          path: artifacts/release/

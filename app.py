@@ -124,6 +124,7 @@ def show_snapshot(connection: sqlite3.Connection) -> None:
 
 
 def show_scenarios(transactions, imports: dict, selected_month: str) -> None:
+    st.divider()
     st.subheader("What If?")
     months = sorted({row.posted_date[:7] for row in transactions})
     if st.session_state.get("scenario_month") not in months:
@@ -235,6 +236,7 @@ def show_quality(summary: analytics.MonthSummary) -> None:
 
 
 def show_questions(transactions, imports: dict, selected_month: str) -> None:
+    st.divider()
     st.subheader("Ask Compass")
     st.caption("Ask one question for one imported month. Without a month, the selected snapshot month is used. All imported accounts are included. Answers recalculate from current classifications on every rerun.")
     with st.expander("Supported questions"):
@@ -375,12 +377,13 @@ def mapping_controls(upload) -> tuple[ColumnMapping | None, bool, str]:
 def main() -> None:
     st.set_page_config(page_title="Compass — local financial snapshot", page_icon="🧭")
     st.title("Compass Alpha 0.1")
-    st.caption("Private, local-first financial assistant · Phase 4 What If?")
+    st.caption("Private, local-first financial assistant · Phase 5 release candidate")
     st.warning("All bundled demo statements are fictional. This experimental app is not financial advice.")
     st.caption("CSV files are processed locally and stored in SQLite. No cloud model or API key is required. Use fictional data while evaluating this experimental app.")
     database_path = Path(os.environ.get("COMPASS_DB_PATH", str(ROOT / ".local" / "compass.db")))
     try:
         with closing(db.connect(database_path)) as connection:
+            show_privacy_controls(connection)
             st.subheader("Import a statement")
             if st.button("Load fictional checking statement", key="load_checking"):
                 data = (ROOT / "fixtures" / importer.DEMO_STATEMENTS[0]).read_bytes()
@@ -390,7 +393,7 @@ def main() -> None:
                 st.session_state["last_import_result"] = importer.import_statement(connection, data, importer.DEMO_STATEMENTS[1], source_namespace="fictional-demo")
             # File selection must rerun immediately to enable the submit button.
             # Putting this uploader inside the form would keep it disabled.
-            upload = st.file_uploader("Statement CSV (UTF-8; up to 5 MB)", type=["csv"])
+            upload = st.file_uploader("Statement CSV (UTF-8; up to 5 MB)", type=["csv"], key=f"statement_upload_{st.session_state.get('upload_epoch', 0)}")
             mapping, ready, context = mapping_controls(upload)
             file_token = hashlib.sha256(upload.getvalue()).hexdigest() if upload is not None else "empty"
             with st.form("statement_upload"):
@@ -418,6 +421,31 @@ def main() -> None:
         st.write("Transaction types: " + ", ".join(classification.TRANSACTION_TYPES) + ". Categories are separate from types; transfers and unknowns are excluded from verified totals.")
         st.write("Original amount, date, description, account, source IDs, row data, and import metadata are preserved. Classification changes are stored separately.")
     st.caption("What If? uses deterministic arithmetic and explicit assumptions. Evaluation files never supply the app's financial answers.")
+
+
+def show_privacy_controls(connection: sqlite3.Connection) -> None:
+    if "deletion_notice" in st.session_state:
+        st.success(st.session_state.pop("deletion_notice"))
+    with st.expander("Privacy and local data"):
+        st.write("Imports and classification overrides are stored in the configured local SQLite database. Uploaded CSV copies are not saved to disk by Compass. Questions and scenario controls live in this browser session.")
+        st.caption("Default operation uses no model or external financial API. Optional Ollama uses a loopback endpoint and requires cloud disabled in its server. Dependency installation/model downloads and GitHub Pages hosting have separate network boundaries. This prototype has no app authentication or encryption at rest; use a trusted local machine.")
+        st.warning("Clear all local data permanently removes all imported records, source rows, import metadata and classification overrides in this configured database. It resets this session's uploads, questions and scenarios. Bundled fictional fixtures and original files elsewhere on your computer are kept. Other open sessions should be closed/reloaded; OS backups, snapshots and memory are outside this deletion guarantee.")
+        confirmed = st.checkbox("I understand all imported Compass records will be deleted", key="delete_confirm")
+        phrase = st.text_input("Type DELETE to confirm", key="delete_phrase", max_chars=6)
+        if st.button("Clear all local data", key="clear_all_data", disabled=not confirmed or phrase != "DELETE"):
+            try:
+                db.clear_all_data(connection)
+            except (ValueError, sqlite3.Error):
+                st.error("Local records could not be cleared. Close other database operations and retry. Existing data was preserved.")
+            else:
+                epoch = st.session_state.get("upload_epoch", 0) + 1
+                st.cache_data.clear()
+                st.cache_resource.clear()
+                for key in list(st.session_state):
+                    del st.session_state[key]
+                st.session_state["upload_epoch"] = epoch
+                st.session_state["deletion_notice"] = "All imported local records were cleared. This session was reset; fictional fixtures remain available."
+                st.rerun()
 
 
 if __name__ == "__main__":

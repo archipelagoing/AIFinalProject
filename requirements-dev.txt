@@ -1,0 +1,3 @@
+# Optional real-browser smoke tests and fictional-data recording.
+-r requirements.txt
+playwright>=1.58,<2

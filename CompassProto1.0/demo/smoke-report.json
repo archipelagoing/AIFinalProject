@@ -1,0 +1,22 @@
+{
+  "ok": true,
+  "fictional_only": true,
+  "temporary_database": true,
+  "actual_server_restart": true,
+  "mobile_viewport": "390x844",
+  "confirmed_deletion_survived_reload": true,
+  "external_browser_hosts_attempted": [],
+  "external_backend_attempts": false,
+  "browser_errors": [],
+  "checkpoints": [
+    "Start with an empty local workspace",
+    "Import checking + savings \u00b7 May surplus $747.06",
+    "Ask Compass \u00b7 $747.06 surplus with source-row evidence",
+    "Correct a category \u00b7 original source data stays intact",
+    "Replace $1,275 rent with $1,500 \u00b7 surplus $522.06",
+    "Additional $1,500 rent \u00b7 surplus \u2212$752.94",
+    "Restart the actual server \u00b7 imported records persist",
+    "Saved correction survives restart \u00b7 fictional-data demo complete"
+  ],
+  "recorded": false
+}

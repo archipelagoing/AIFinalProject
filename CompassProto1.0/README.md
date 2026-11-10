@@ -1,6 +1,6 @@
 # Compass Alpha 0.1
 
-> **Implementation status:** The root-level Python/Streamlit [Phase 0 foundation](PHASE0.md), [Phase 1 import/snapshot](PHASE1.md), [Phase 2 complete importer/review](PHASE2.md), [Phase 3 snapshot/Ask Compass](PHASE3.md), and [Phase 4 What If? engine](PHASE4.md) are implemented and tested. Run with the commands in the [root README](../README.md#run-the-local-python-foundation). Phase 5 release/privacy work remains. The separate GitHub Pages prototype in [`../docs/`](../docs/README.md) uses JavaScript and browser storage.
+> **Implementation status:** The root-level Python/Streamlit [Phase 0 foundation](PHASE0.md), [Phase 1 import/snapshot](PHASE1.md), [Phase 2 complete importer/review](PHASE2.md), [Phase 3 snapshot/Ask Compass](PHASE3.md), [Phase 4 What If? engine](PHASE4.md), and [Phase 5 quality/privacy release checks](PHASE5.md) are implemented and tested. Run with the commands in the [root README](../README.md#run-the-local-python-foundation). See the [recorded fictional demo](demo/README.md) and release limitations. The separate GitHub Pages prototype in [`../docs/`](../docs/README.md) uses JavaScript and browser storage.
 
 **A private, local-first financial assistant with an inspectable What If? calculator.**
 
@@ -67,7 +67,7 @@ compass-alpha/
 
 The four originals remain alongside this README. Identical runnable-app copies live in the repository-root `fixtures/` folder. The root `app.py`, `requirements.txt`, `compass/`, and `tests/python/` implement Phases 0–2; the tree above continues to describe the fuller planned application.
 
-## 4. Installation and local run (Phases 0–2)
+## 4. Installation and local run
 
 Requires **Python 3.11+** and a local machine. Run from the repository root. No cloud key is required. Choose **Load fictional checking statement**, then **Load fictional savings statement**. Use **Review and correct classifications** for overrides or **Map a different CSV layout** for explicit third-party field/date/amount interpretation.
 
@@ -357,18 +357,18 @@ Validate `existing_rent_cents` only as required for replacement mode; validate a
 
 Run `python -m pytest -q` and verify:
 
-- [ ] Fresh app opens locally with empty state and fictional-demo option.
-- [ ] Checking and savings CSVs import without losing valid rows.
-- [ ] Reimport is idempotent; distinct identical-looking purchases survive.
-- [ ] All six expected monthly summaries match **exact cents**.
-- [ ] Transfers excluded; April refund offsets expense; June unknown flagged.
-- [ ] Five question handlers return correct values with evidence rows.
-- [ ] User category/type correction changes summaries and survives restart.
+- [x] Fresh app opens locally with empty state and fictional-demo option.
+- [x] Checking and savings CSVs import without losing valid rows.
+- [x] Reimport is idempotent; distinct identical-looking purchases survive.
+- [x] All six expected monthly summaries match **exact cents**.
+- [x] Transfers excluded; April refund offsets expense; June unknown flagged.
+- [x] Five question handlers return correct values with evidence rows.
+- [x] User category/type correction changes summaries and survives restart.
 - [x] May rent **replace** = `$522.06`; **additional** = `−$752.94`.
 - [x] Six-month projection is correct and labeled static.
 - [x] Bad input, missing rent, partial months, and unsupported questions fail safely.
-- [ ] Clear-all-data works after restart.
-- [ ] No unapproved cloud calls or real bank statement data in source control.
+- [x] Clear-all-data works after restart.
+- [x] No unapproved cloud calls or real bank statement data in source control.
 
 **60–90 second demo script:** Launch → load checking → load savings → select May → show `$747.06` surplus → ask category question and open evidence → correct a transaction and show refresh → What If? replace `$1,275` with `$1,500` → show `$522.06` → toggle additional → show `−$752.94` → restart and confirm persistence.
 

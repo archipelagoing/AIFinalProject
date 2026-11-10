@@ -118,6 +118,22 @@ def list_imports(connection: sqlite3.Connection) -> list[dict]:
     """)]
 
 
+def clear_all_data(connection: sqlite3.Connection) -> None:
+    """Delete only Compass records atomically; callers provide explicit UI confirmation.
+
+    Keep the schema and bundled fixtures. No uploaded files are persisted by this
+    app. SQLite secure_delete overwrites deleted cells, not external backups or
+    filesystem snapshots; this is not a guarantee of forensic erasure.
+    """
+    if connection.in_transaction:
+        raise ValueError("Finish the current database operation before clearing data.")
+    connection.execute("PRAGMA secure_delete = ON")
+    with connection:
+        connection.execute("DELETE FROM transactions")
+        connection.execute("DELETE FROM import_settings")
+        connection.execute("DELETE FROM imports")
+
+
 def account_label(transaction: Transaction, metadata: dict) -> str:
     if metadata.get("mapping_json"):
         mapping = json.loads(metadata["mapping_json"])

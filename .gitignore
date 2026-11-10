@@ -222,10 +222,13 @@ __marimo__/
 # Compass local financial data and browser tooling
 node_modules/
 *.db
+*.db-*
 *.sqlite*
+.env*
 .env.*
 .local/
 private-uploads/
 playwright-report/
 test-results/
+artifacts/
 .DS_Store

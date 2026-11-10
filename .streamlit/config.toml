@@ -5,3 +5,14 @@ gatherUsageStats = false
 address = "127.0.0.1"
 headless = true
 fileWatcherType = "none"
+maxUploadSize = 5
+enableCORS = true
+enableXsrfProtection = true
+
+[client]
+showErrorDetails = "none"
+
+[theme]
+# Built-in fonts avoid third-party font requests.
+font = "sans-serif"
+primaryColor = "#0F766E"

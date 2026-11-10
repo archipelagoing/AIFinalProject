@@ -5,7 +5,7 @@ const $ = selector => document.querySelector(selector);
 const escape = value => String(value).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 let state = emptyState(), selectedMonth = '', currentAnswer = null, scenarioInputs = null, storageProblem = '';
 try { state = loadState(localStorage); } catch { storageProblem = 'Saved data could not be opened. Storage may be blocked or the saved format may be invalid. Clear saved data to reset it; no saved records were overwritten.'; }
-const colors = ['#41664f', '#7f9870', '#a9b999', '#c7d2b5', '#dedfc9', '#e9e7db'];
+const colors = ['#315942', '#5f8f68', '#b86b45', '#c79a35', '#aeb7b2', '#c9d9bf'];
 const titles = {
   overview: ['Your money, in perspective.', 'Understand where you are. Explore where you could go.'],
   transactions: ['The details make the difference.', 'Review the source. Keep your picture of spending accurate.'],

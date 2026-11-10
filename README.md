@@ -412,35 +412,31 @@ It should avoid generic fintech dashboards, excessive gradients, stock illustrat
 
 ### Color palette
 
-Paper
+Compass takes its colors from the materials people associate with money: warm paper, layered banknote greens, copper, nickel, gold, and the piggy bank itself. These are **brand colors**, not claims about official currency-printing specifications; real banknotes vary by country, denomination, ink, age, and lighting.
 
-\#F5F1E8Warm background
+| Token | Hex | Role |
+| --- | --- | --- |
+| Paper | `#F4F0E6` | Primary warm background |
+| Treasury Cream | `#FFF9ED` | Raised cards and light surfaces |
+| Ink | `#18231C` | Primary text and high-contrast data |
+| Engraved Black | `#20251F` | Title ink and engraved-style illustration linework |
+| Reverse Green | `#315942` | Greenback-inspired surfaces, primary actions, and navigation |
+| Banknote Green | `#5F8F68` | Supporting data, progress, and illustrations |
+| Banknote Mint | `#C9D9BF` | Soft green surfaces and selected states |
+| Serial Green | `#A7D48E` | Bright seal/serial-style detail on Engraved Black only |
+| Purple Five | `#7A5B98` | Sparse denomination-inspired accents, badges, and achievement details |
+| Penny Copper | `#B86B45` | Editorial warmth, callouts, and the pig's outline |
+| Nickel Silver | `#AEB7B2` | Borders, inactive controls, and secondary UI |
+| Coin Gold | `#C79A35` | Awards, achievement moments, and premium emphasis |
+| Pig Pink | `#EBA3B5` | The mascot and playful moments only |
+| Pig Rose Shadow | `#C9758B` | Pig shading and hover/pressed mascot states |
+| Ledger Red | `#AE463F` | Errors and negative financial scenarios only |
 
-Ink
-
-\#17171BTypography
-
-Voltage
-
-\#D9FF43Highlights
-
-Iris
-
-\#8755E8Signature accent
-
-Pool
-
-\#82DDE5Secondary stories
-
-Guava
-
-\#FF806DEditorial emphasis
-
-The palette is a design proposal. Exact text/background pairings require contrast testing before implementation.
+**Usage rules.** Ink on Paper or Treasury Cream is the default reading pair. Reverse Green is the only saturated brand color intended for text and primary buttons. Engraved Black is a distinct front-of-note/title color; Serial Green may appear only as a high-contrast detail on Engraved Black, never as small text on Paper. Purple Five is deliberately sparse and does not carry status or error meaning. Banknote Green, Coin Gold, Copper, and Pig Pink are accents rather than body-text colors; their exact foreground/background pairings must pass WCAG contrast testing before implementation. Use Mint as a surface, not a text color. The pig must use two approved treatments: Pig Pink on a Reverse Green field (with Cream/Forest details), or Pig Rose Shadow with Copper linework on Paper/Cream. Do not use Pig Pink as small text or place it unoutlined on light paper. Ledger Red means an error, rejected/declined action, or destructive control—not ordinary overspending or a negative monthly total, which uses Copper.
 
 ### Typography
 
-- Display: bold, expressive grotesk typography for story headlines.
+- Display: an engraved Roman-inspired serif stack (`Iowan Old Style`, `Palatino`, `Georgia`, serif) for page and card titles only. It references the hand-engraved lettering of U.S. notes without claiming to reproduce the note's custom lettering.
 - Body: clean sans-serif typography for navigation and explanations.
 - Numbers: tabular or monospaced numerals for totals, calculations, and comparisons.
 
@@ -450,7 +446,7 @@ The palette is a design proposal. Exact text/background pairings require contras
 
 **Mascot role:** The pig acts as a companion and guide—celebrating discoveries, reacting to surprising patterns, introducing Money Wrapped awards, and making difficult financial conversations feel less intimidating. It must never mock debt, poverty, income, or essential purchases. Its expression should change with the user's selected Gentle/Direct/Roast tone without changing factual content.
 
-**Visual rules:** Distinctive simple silhouette, legible at favicon size, accessible contrast, no excessive infantilization, no clutter over financial charts. Use the Iris/Guava/Voltage palette selectively; avoid implying the pig itself is an AI entity with independent financial authority.
+**Visual rules:** Distinctive simple silhouette, legible at favicon size, accessible contrast, no excessive infantilization, no clutter over financial charts. Use Pig Pink/Pig Rose Shadow with restrained Copper, Gold, or Reverse Green details; avoid implying the pig itself is an AI entity with independent financial authority.
 
 **Brand meaning:** A piggy bank represents personal money; wings represent freedom and perspective. The abundance symbolism in the $8.88 and $88.88 prices is a playful brand motif, not a promise of wealth.
 

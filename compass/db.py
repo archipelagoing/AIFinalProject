@@ -4,6 +4,7 @@ from dataclasses import asdict
 from datetime import datetime, timezone
 from pathlib import Path
 import sqlite3
+import json
 
 from compass.contracts import Transaction, TransactionType
 
@@ -21,6 +22,15 @@ CREATE TABLE IF NOT EXISTS imports (
     sha256 TEXT UNIQUE NOT NULL CHECK(length(sha256) = 64),
     created_at TEXT NOT NULL
 );
+CREATE TABLE IF NOT EXISTS import_settings (
+    import_id TEXT PRIMARY KEY REFERENCES imports(id),
+    source_namespace TEXT NOT NULL,
+    mapping_json TEXT NOT NULL CHECK(json_valid(mapping_json)),
+    confirmed_distinct INTEGER NOT NULL CHECK(confirmed_distinct IN (0,1))
+);
+CREATE TRIGGER IF NOT EXISTS immutable_import_settings
+BEFORE UPDATE ON import_settings
+BEGIN SELECT RAISE(ABORT, 'Source interpretation is immutable'); END;
 CREATE TABLE IF NOT EXISTS transactions (
     id TEXT PRIMARY KEY NOT NULL,
     account_id TEXT NOT NULL CHECK(length(trim(account_id)) > 0),
@@ -101,13 +111,53 @@ def list_transactions(connection: sqlite3.Connection) -> list[Transaction]:
 
 
 def list_imports(connection: sqlite3.Connection) -> list[dict]:
-    return [dict(row) for row in connection.execute("SELECT * FROM imports ORDER BY created_at, id")]
+    return [dict(row) for row in connection.execute("""
+        SELECT imports.*, source_namespace, mapping_json, confirmed_distinct
+        FROM imports LEFT JOIN import_settings ON imports.id = import_settings.import_id
+        ORDER BY created_at, id
+    """)]
+
+
+def account_label(transaction: Transaction, metadata: dict) -> str:
+    if metadata.get("mapping_json"):
+        mapping = json.loads(metadata["mapping_json"])
+        if mapping.get("account_column"):
+            return transaction.original_row[mapping["account_column"]]
+        if mapping.get("fixed_account"):
+            return mapping["fixed_account"]
+    return transaction.original_row.get("account", transaction.account_id)
 
 
 def correct_classification(connection: sqlite3.Connection, transaction_id: str, kind: TransactionType | str, category: str) -> Transaction:
     corrected = get_transaction(connection, transaction_id).with_classification(kind, category)
-    connection.execute(
-        "UPDATE transactions SET corrected_type = ?, corrected_category = ? WHERE id = ?",
-        (corrected.corrected_type.value, corrected.corrected_category, transaction_id),
-    )
+    _store_override(connection, corrected)
     return corrected
+
+
+def restore_classification(connection: sqlite3.Connection, transaction_id: str) -> Transaction:
+    from dataclasses import replace
+
+    original = replace(get_transaction(connection, transaction_id), corrected_type=None, corrected_category=None)
+    _store_override(connection, original)
+    return original
+
+
+def _store_override(connection: sqlite3.Connection, transaction: Transaction) -> None:
+    from compass.analytics import summarize_month
+
+    connection.execute("SAVEPOINT compass_classification")
+    try:
+        connection.execute(
+            "UPDATE transactions SET corrected_type = ?, corrected_category = ? WHERE id = ?",
+            (transaction.corrected_type.value if transaction.corrected_type is not None else None,
+             transaction.corrected_category, transaction.id),
+        )
+        month = transaction.posted_date[:7]
+        # Validate both headline and category totals before committing an edit.
+        summary = summarize_month(list_transactions(connection), month)
+        summary.category_totals
+        connection.execute("RELEASE SAVEPOINT compass_classification")
+    except (ValueError, sqlite3.Error):
+        connection.execute("ROLLBACK TO SAVEPOINT compass_classification")
+        connection.execute("RELEASE SAVEPOINT compass_classification")
+        raise

@@ -1,10 +1,10 @@
 # Compass Alpha 0.1
 
-> **Implementation status:** The root-level Python/Streamlit [Phase 0 foundation](PHASE0.md) and [Phase 1 import/snapshot](PHASE1.md) are implemented and tested. Run with the commands in the [root README](../README.md#run-the-local-python-foundation). The separate GitHub Pages prototype in [`../docs/`](../docs/README.md) uses JavaScript and browser storage.
+> **Implementation status:** The root-level Python/Streamlit [Phase 0 foundation](PHASE0.md), [Phase 1 import/snapshot](PHASE1.md), and [Phase 2 complete importer/review](PHASE2.md) are implemented and tested. Run with the commands in the [root README](../README.md#run-the-local-python-foundation). The separate GitHub Pages prototype in [`../docs/`](../docs/README.md) uses JavaScript and browser storage.
 
 **A private, local-first financial assistant with an inspectable What If? calculator.**
 
-> **Status:** Python CSV import, atomic SQLite persistence, rule classification, and month snapshots with source evidence are implemented. The review/edit UI, complete transfer reconciliation, financial question routing, and What If? interface are still being built. Run from the repository root. All bundled financial data is fictional. Compass Alpha is experimental software, not a security-audited banking application or a source of personalized financial advice.
+> **Status:** Python CSV import, atomic SQLite persistence, safe overlap warnings, explicit column mapping, editable classifications, transfer-pair evidence, and month/category snapshots are implemented. Financial question routing and What If? integration are still being built. Run from the repository root. All bundled financial data is fictional. Compass Alpha is experimental software, not a security-audited banking application or a source of personalized financial advice.
 
 ## 1. What exactly is Compass?
 
@@ -65,11 +65,11 @@ compass-alpha/
 └── .local/                          # Ignored app database / uploads, if used
 ```
 
-The four originals remain alongside this README. Identical runnable-app copies live in the repository-root `fixtures/` folder. The root `app.py`, `requirements.txt`, `compass/`, and `tests/python/` implement Phases 0 and 1; the tree above continues to describe the fuller planned application.
+The four originals remain alongside this README. Identical runnable-app copies live in the repository-root `fixtures/` folder. The root `app.py`, `requirements.txt`, `compass/`, and `tests/python/` implement Phases 0–2; the tree above continues to describe the fuller planned application.
 
-## 4. Installation and local run (Phases 0 and 1)
+## 4. Installation and local run (Phases 0–2)
 
-Requires **Python 3.11+** and a local machine. Run from the repository root. No cloud key is required. After starting, choose **Load fictional checking statement** to see May's imported snapshot and its source evidence.
+Requires **Python 3.11+** and a local machine. Run from the repository root. No cloud key is required. Choose **Load fictional checking statement**, then **Load fictional savings statement**. Use **Review and correct classifications** for overrides or **Map a different CSV layout** for explicit third-party field/date/amount interpretation.
 
 macOS/Linux:
 

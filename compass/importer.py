@@ -10,9 +10,10 @@ from pathlib import Path
 import sqlite3
 
 from compass import db
-from compass.analytics import aggregate
+from compass.analytics import summarize_month
 from compass.classification import classify
-from compass.contracts import Transaction, parse_amount_cents, validate_posted_date
+from compass.contracts import Transaction
+from compass.mapping import CANONICAL_MAPPING, ColumnMapping
 
 REQUIRED_COLUMNS = ("date", "description", "amount", "account", "transaction_id")
 DEMO_STATEMENTS = (
@@ -38,6 +39,8 @@ class ImportResult:
     issues: tuple[ImportIssue, ...] = ()
     duplicate: bool = False
     import_id: str | None = None
+    warnings: tuple[str, ...] = ()
+    review_required: bool = False
 
     @property
     def ok(self) -> bool:
@@ -49,7 +52,21 @@ class ImportResult:
         return self.total_rows if self.issues else 0
 
 
-def _parse(data: bytes, namespace: str) -> tuple[list[Transaction], list[ImportIssue], int]:
+def read_headers(data: bytes) -> list[str]:
+    if len(data) > MAX_FILE_BYTES:
+        raise ValueError("Choose a CSV no larger than 5 MB.")
+    try:
+        headers = next(csv.reader(io.StringIO(data.decode("utf-8-sig"), newline=""), strict=True))
+    except UnicodeDecodeError as error:
+        raise ValueError("Save the statement as UTF-8 CSV and try again.") from error
+    except (StopIteration, csv.Error) as error:
+        raise ValueError("The CSV needs a readable header and transaction rows.") from error
+    if not headers or any(not header.strip() for header in headers) or len(set(headers)) != len(headers):
+        raise ValueError("CSV headers must be nonempty and unique.")
+    return headers
+
+
+def _parse(data: bytes, namespace: str, mapping: ColumnMapping | None = None) -> tuple[list[Transaction], list[ImportIssue], int]:
     issues, transactions = [], []
     digest = hashlib.sha256(data).hexdigest()
     if not namespace.strip():
@@ -65,8 +82,15 @@ def _parse(data: bytes, namespace: str) -> tuple[list[Transaction], list[ImportI
         headers = next(reader)
     except (StopIteration, csv.Error):
         return [], [ImportIssue(1, 1, "The CSV needs a header and at least one transaction.")], 0
-    if len(headers) != len(REQUIRED_COLUMNS) or set(headers) != set(REQUIRED_COLUMNS):
+    if mapping is None and (len(headers) != len(REQUIRED_COLUMNS) or set(headers) != set(REQUIRED_COLUMNS)):
         return [], [ImportIssue(1, 1, "Use exactly these unique columns: " + ",".join(REQUIRED_COLUMNS))], 0
+    try:
+        if not headers or any(not header.strip() for header in headers) or len(set(headers)) != len(headers):
+            raise ValueError("CSV headers must be nonempty and unique.")
+        selected_mapping = mapping or CANONICAL_MAPPING
+        selected_mapping.validate(headers)
+    except ValueError as error:
+        return [], [ImportIssue(1, 1, str(error))], 0
     ordinal, seen = 1, set()
     timestamp = datetime.now(timezone.utc).isoformat()
     while True:
@@ -84,12 +108,12 @@ def _parse(data: bytes, namespace: str) -> tuple[list[Transaction], list[ImportI
             if len(cells) != len(headers):
                 raise ValueError("Row column count does not match the header.")
             raw = dict(zip(headers, cells))
-            posted_date = validate_posted_date(raw["date"].strip())
-            amount = parse_amount_cents(raw["amount"])
-            description, account = raw["description"].strip(), raw["account"].strip()
+            normalized = selected_mapping.normalize(raw)
+            posted_date, amount = normalized["posted_date"], normalized["amount_cents"]
+            description, account = normalized["description"], normalized["account"]
             if not description or not account:
                 raise ValueError("Description and account must be nonempty.")
-            source_id = raw["transaction_id"].strip() or None
+            source_id = normalized["source_id"]
             account_id = "csv:" + hashlib.sha256(json.dumps([namespace.strip(), account], ensure_ascii=False).encode()).hexdigest()
             if source_id is not None:
                 identity = (account_id, source_id)
@@ -121,7 +145,7 @@ def inspect_demo_statement(path: Path) -> dict[str, str | int]:
     return {"Statement": path.name, "Transactions": len(transactions), "Data": "Fictional"}
 
 
-def import_statement(connection: sqlite3.Connection, data: bytes, filename: str, *, source_namespace: str = "default") -> ImportResult:
+def import_statement(connection: sqlite3.Connection, data: bytes, filename: str, *, source_namespace: str = "default", mapping: ColumnMapping | None = None, confirm_distinct: bool = False) -> ImportResult:
     """Validate first, then commit the whole statement under a SQLite savepoint.
 
     With an outer transaction the caller owns its final commit. Without one,
@@ -130,27 +154,48 @@ def import_statement(connection: sqlite3.Connection, data: bytes, filename: str,
     """
     if not isinstance(data, bytes):
         raise TypeError("Statement input must be original file bytes.")
-    transactions, issues, count = _parse(data, source_namespace)
+    transactions, issues, count = _parse(data, source_namespace, mapping)
     if issues:
         invalid = sum(issue.row_number is not None and issue.row_number > 1 for issue in issues)
         return ImportResult(count, len(transactions), invalid, issues=tuple(issues))
     if not isinstance(filename, str) or not filename.strip():
         return ImportResult(count, count, issues=(ImportIssue(None, None, "A source filename is required."),))
     digest = hashlib.sha256(data).hexdigest()
+    interpretation = (mapping or CANONICAL_MAPPING).to_json()
+    notices = ()
     current_row = None
     connection.execute("SAVEPOINT compass_statement_import")
     try:
+        saved = db.list_transactions(connection)
         if connection.execute("SELECT 1 FROM imports WHERE sha256 = ?", (digest,)).fetchone():
+            previous = [row for row in saved if row.import_id == digest]
+            metadata = connection.execute("SELECT * FROM import_settings WHERE import_id = ?", (digest,)).fetchone()
+            same_settings = metadata is None or (metadata["source_namespace"] == source_namespace.strip() and metadata["mapping_json"] == interpretation)
+            if not same_settings or not _same_source_rows(previous, transactions):
+                connection.execute("RELEASE SAVEPOINT compass_statement_import")
+                return ImportResult(count, count, issues=(ImportIssue(None, None, "These file bytes were already imported with a different bank/source or column interpretation. Reuse the original settings; saved records and corrections were not changed."),))
             connection.execute("RELEASE SAVEPOINT compass_statement_import")
             return ImportResult(count, count, duplicate=True, import_id=digest)
+        conflicts, uncertain = _check_overlap(saved, transactions, db.list_imports(connection), filename)
+        if conflicts or (uncertain and not confirm_distinct):
+            connection.execute("RELEASE SAVEPOINT compass_statement_import")
+            return ImportResult(count, count, issues=tuple(conflicts or uncertain),
+                                review_required=not conflicts and bool(uncertain))
+        if uncertain:
+            notices = (f"You confirmed {len(uncertain)} overlap/look-alike warning(s) as distinct source activity. All incoming rows were kept; nothing was merged or silently dropped.",)
         db.add_import(connection, digest, filename, digest)
+        connection.execute(
+            "INSERT INTO import_settings(import_id,source_namespace,mapping_json,confirmed_distinct) VALUES(?,?,?,?)",
+            (digest, source_namespace.strip(), interpretation, int(bool(uncertain))),
+        )
         for transaction in transactions:
             current_row = transaction.source_row_number
             db.add_transaction(connection, transaction)
         # Reject totals outside the exact money contract before committing.
         saved = db.list_transactions(connection)
         for month in {row.posted_date[:7] for row in saved}:
-            aggregate(row for row in saved if row.posted_date.startswith(month + "-"))
+            summary = summarize_month(saved, month)
+            summary.category_totals
         connection.execute("RELEASE SAVEPOINT compass_statement_import")
     except (sqlite3.Error, ValueError) as error:
         connection.execute("ROLLBACK TO SAVEPOINT compass_statement_import")
@@ -162,4 +207,42 @@ def import_statement(connection: sqlite3.Connection, data: bytes, filename: str,
         else:
             reason = "The database could not save this statement. The entire import was rolled back; check local storage access."
         return ImportResult(count, count, issues=(ImportIssue(current_row, None, reason),))
-    return ImportResult(count, count, imported_rows=count, import_id=digest)
+    return ImportResult(count, count, imported_rows=count, import_id=digest, warnings=notices)
+
+
+def _same_source_rows(previous: list[Transaction], incoming: list[Transaction]) -> bool:
+    fields = ("source_row_number", "account_id", "source_transaction_id", "posted_date", "description", "amount_cents", "original_row_json")
+    return (sorted(tuple(getattr(row, name) for name in fields) for row in previous)
+            == sorted(tuple(getattr(row, name) for name in fields) for row in incoming))
+
+
+def _fingerprint(row: Transaction) -> tuple:
+    return row.account_id, row.posted_date, " ".join(row.description.casefold().split()), row.amount_cents
+
+
+def _check_overlap(saved: list[Transaction], incoming: list[Transaction], imports: list[dict], filename: str) -> tuple[list[ImportIssue], list[ImportIssue]]:
+    known_ids = {(row.account_id, row.source_transaction_id): row for row in saved if row.source_transaction_id is not None}
+    fingerprints = {_fingerprint(row) for row in saved}
+    conflicts, uncertain = [], []
+    for row in incoming:
+        existing = known_ids.get((row.account_id, row.source_transaction_id)) if row.source_transaction_id is not None else None
+        if existing is not None:
+            same = (existing.posted_date, existing.description, existing.amount_cents) == (row.posted_date, row.description, row.amount_cents)
+            reason = "Overlapping statement: this account/source ID is already imported." if same else "Conflicting source ID: its date, description, or amount differs from the saved source."
+            conflicts.append(ImportIssue(row.source_row_number, None, reason + " The entire incoming statement is blocked. Review the source file; confirmation cannot overwrite an existing ID."))
+        elif _fingerprint(row) in fingerprints:
+            uncertain.append(ImportIssue(row.source_row_number, None, "Possible cross-file duplicate: account, date, description and amount match an imported row, but reliable shared IDs are absent or differ. Verify the source; confirm distinct activity only if these are separate transactions."))
+    # An edited copy may change IDs and amounts. A reused filename plus an
+    # overlapping activity range is a warning, never an automatic merge.
+    same_names = {item["id"] for item in imports if item["filename"].casefold() == filename.casefold()}
+    old_ranges = {}
+    new_ranges = {}
+    for row in saved:
+        if row.import_id in same_names:
+            old_ranges.setdefault((row.import_id, row.account_id), []).append(row.posted_date)
+    for row in incoming:
+        new_ranges.setdefault(row.account_id, []).append(row.posted_date)
+    if any(account in new_ranges and max(min(dates), min(new_ranges[account])) <= min(max(dates), max(new_ranges[account]))
+           for (_, account), dates in old_ranges.items()):
+        uncertain.append(ImportIssue(None, None, "A statement with this filename and overlapping activity dates already exists for an account. This may be an edited copy. Review the source before confirming distinct activity."))
+    return conflicts, uncertain

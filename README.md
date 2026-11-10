@@ -6,7 +6,7 @@
 
 ## Run the local Python foundation
 
-**Phases 0 and 1 are implemented:** import the fictional checking statement or a supported CSV into local SQLite, select a month, and inspect income, net expenses, surplus, and the original source rows. Exact-money contracts, immutable sources, and the independent fixture audit are also in place. Python review/edit UI, transfer reconciliation, question routing, and What If? remain later work. The separate [GitHub Pages prototype](https://archipelagoing.github.io/AIFinalProject/) remains available.
+**Phases 0–2 are implemented:** import fictional checking and savings statements into local SQLite, review and correct classifications, and inspect recalculated monthly/category totals with original source evidence. Duplicate/overlap warnings and explicit third-party CSV column mapping are included. Python question routing and What If? remain later work. The separate [GitHub Pages prototype](https://archipelagoing.github.io/AIFinalProject/) remains available.
 
 Requires **Python 3.11+**. Fresh-environment verification used Python 3.12.2, Streamlit 1.67.0, and pytest 9.2.0. Run these commands from the repository root.
 
@@ -38,9 +38,11 @@ python -m pytest -q
 
 The standalone audit uses only Python's standard library. Its `--json` option reports exact cents; a mismatch exits with status 1 and never rewrites expected values. Evaluation oracles are never read by the app.
 
-After launching, click **Load fictional checking statement**. May 2026 defaults to **$3,700.00 income**, **$2,952.94 net expenses**, and **$747.06 surplus**. Expand the calculation panels to inspect contributing transactions. Restart the app to confirm saved records remain. For an uploaded CSV, choose a bank/source identity that stays the same across that bank's statements; use a different identity for another bank.
+After launching, click **Load fictional checking statement**, then **Load fictional savings statement**. May 2026 defaults to **$3,700.00 income**, **$2,952.94 net expenses**, and **$747.06 surplus**; matching savings transfers are excluded. Expand **Review and correct classifications** to save type/category overrides. June's $80 ATM withdrawal stays unresolved until reviewed. Restarting preserves imports and corrections.
 
-See [Phase 1 implementation and verification](CompassProto1.0/PHASE1.md) for atomic-import behavior, counts, source traceability, and remaining work, and [Phase 0](CompassProto1.0/PHASE0.md) for the original foundation. The product pitch below describes the broader planned application.
+For uploads, keep each bank/source identity and account label consistent. Use **Map a different CSV layout** for alternate headers, explicit date order, signed amounts with either polarity, or separate debit/credit columns. Review and confirm the chosen interpretation. An existing source ID cannot be overwritten. Cross-file look-alikes are blocked until you verify and explicitly confirm distinct activity; no rows are silently merged or dropped.
+
+See [Phase 2 implementation and verification](CompassProto1.0/PHASE2.md) for import/review behavior, mapping controls, and remaining work. [Phase 1](CompassProto1.0/PHASE1.md) and [Phase 0](CompassProto1.0/PHASE0.md) record the earlier checkpoints. The product pitch below describes the broader planned application.
 
 ## A. What Is Compass?
 

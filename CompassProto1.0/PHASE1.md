@@ -2,6 +2,8 @@
 
 Implemented on 2026-11-10. The Python application now imports the fictional checking statement into local SQLite and displays a selected month's computed financial snapshot. [ProtoToDo.md](ProtoToDo.md) is the authoritative checklist; later phases remain open.
 
+This is the historical Phase 1 report. [Phase 2](PHASE2.md) now adds savings, classification review, overlap handling, and explicit CSV mapping.
+
 ## Try it
 
 Use the repository-root README's virtual-environment instructions, then run:

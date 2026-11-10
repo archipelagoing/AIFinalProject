@@ -1,8 +1,8 @@
 # Compass Alpha 0.1 — Implementation TODO
 
-> **Two implementations:** The browser prototype lives in [`../docs/`](../docs/README.md). The repository-root Python/Streamlit application implements [Phase 0](PHASE0.md) and [Phase 1](PHASE1.md). Checkboxes below refer to Python requirements; separate browser evidence remains at the end of this file.
+> **Two implementations:** The browser prototype lives in [`../docs/`](../docs/README.md). The repository-root Python/Streamlit application implements [Phase 0](PHASE0.md), [Phase 1](PHASE1.md), and [Phase 2](PHASE2.md). Checkboxes below refer to Python requirements; separate browser evidence remains at the end of this file.
 
-**Status (2026-11-10):** Python Phases 0 and 1 implemented and locally verified; later Python phases remain incomplete. **Target:** local runnable alpha (timeboxes below are estimates). **Source:** Pranav's local-first statement analysis assistant, extended by one deterministic What If? engine.
+**Status (2026-11-10):** Python Phases 0–2 implemented and locally verified; later Python phases remain incomplete. **Target:** local runnable alpha (timeboxes below are estimates). **Source:** Pranav's local-first statement analysis assistant, extended by one deterministic What If? engine.
 
 ## Rules and priorities
 
@@ -37,16 +37,18 @@
 
 ## Phase 2 — Complete importer and review (1:30–2:15)
 
-- [ ] **P0-B** Import savings CSV into same database. **Pass:** transfer outflow and matching savings inflow are excluded from income/expenses; combined transfer net = `$0.00` in each month.
-- [ ] **P0-B** Idempotence at file/account/row level; reimporting same file must not duplicate. **Pass:** row count unchanged after identical import.
-- [ ] **P0-B** Preserve legitimate repeated transactions even if merchant, amount, and date match; use source transaction ID scoped by account or file-row identity. **Pass:** two distinct identical-looking rows survive.
-- [ ] **P0-B** Handle same file renamed, conflicting source IDs, overlapping statements, and edited copies safely: detect/flag uncertainty rather than silently dropping or merging rows. **Pass:** visible warning and deterministic handling.
-- [ ] **P0-B** Preserve original source row and raw signed amount; store category/type overrides separately from predicted labels. **Pass:** corrections persist across restart and same-file reimport.
-- [ ] **P0-B** Editable effective category/type, including `unknown` review. **Pass:** correcting a row recalculates all affected aggregates; original raw data unchanged.
-- [ ] **P0-B** June `$80` ATM transaction remains `unknown`, visible in unresolved section and excluded from verified totals. **Pass:** June verified surplus `$1,711.45` with separate `$80` unresolved outflow notice.
-- [ ] **P0-B** Refund offsets expenses in its category rather than increasing earned income. **Pass:** April `$24.99` grocery refund handled correctly.
-- [ ] **P0-B** Import error UX: empty CSV, missing column, bad encoding, malformed row, duplicate file, and partial coverage. **Pass:** actionable visible message; no stack trace exposed as financial answer.
-- [ ] **P1** Add explicit column mapping for common third-party CSV variants; never infer debit/credit polarity silently.
+- [x] **P0-B** Import savings CSV into same database. **Pass:** transfer outflow and matching savings inflow are excluded from income/expenses; combined transfer net = `$0.00` in each month.
+- [x] **P0-B** Idempotence at file/account/row level; reimporting same file must not duplicate. **Pass:** row count unchanged after identical import.
+- [x] **P0-B** Preserve legitimate repeated transactions even if merchant, amount, and date match; use source transaction ID scoped by account or file-row identity. **Pass:** two distinct identical-looking rows survive.
+- [x] **P0-B** Handle same file renamed, conflicting source IDs, overlapping statements, and edited copies safely: detect/flag uncertainty rather than silently dropping or merging rows. **Pass:** visible warning and deterministic handling.
+- [x] **P0-B** Preserve original source row and raw signed amount; store category/type overrides separately from predicted labels. **Pass:** corrections persist across restart and same-file reimport.
+- [x] **P0-B** Editable effective category/type, including `unknown` review. **Pass:** correcting a row recalculates all affected aggregates; original raw data unchanged.
+- [x] **P0-B** June `$80` ATM transaction remains `unknown`, visible in unresolved section and excluded from verified totals. **Pass:** June verified surplus `$1,711.45` with separate `$80` unresolved outflow notice.
+- [x] **P0-B** Refund offsets expenses in its category rather than increasing earned income. **Pass:** April `$24.99` grocery refund handled correctly.
+- [x] **P0-B** Import error UX: empty CSV, missing column, bad encoding, malformed row, duplicate file, and partial coverage. **Pass:** actionable visible message; no stack trace exposed as financial answer.
+- [x] **P1** Add explicit column mapping for common third-party CSV variants; never infer debit/credit polarity silently.
+
+**Phase 2 evidence (2026-11-10):** Both fictional statements yield 164 records, all reference classifications, and all expected monthly metrics, including zero transfer net each month. Tests verify renamed-file idempotence, repeated purchases, explicit look-alike confirmation, blocked source-ID conflicts/edited-copy warnings, immutable source data, and correction persistence across a real process restart/reimport. AppTest verifies savings import, unknown review/restore with immediate totals, refund accounting, actionable errors, duplicate/coverage notices, invalid-edit rollback, and explicit mapping/direction confirmation. The mapper supports both signed polarities and separate debit/credit fields with original values preserved. See [PHASE2.md](PHASE2.md). Next: Phase 3 deterministic Ask Compass and evidence-backed answers.
 
 ## Phase 3 — Snapshot and deterministic Ask Compass (2:15–3:00)
 
@@ -141,4 +143,4 @@ Verified by `npm test` (Node 22+; no dependency installation):
 - [x] Successful remote GitHub Pages deployment verified: [live prototype](https://archipelagoing.github.io/AIFinalProject/), [successful workflow](https://github.com/archipelagoing/AIFinalProject/actions/runs/42760426153). Public HTML, JavaScript, CSS, and both demo CSVs match the tested source bytes. An overlapping legacy branch deployment initially served the README; rerunning the configured Actions deployment resolved it.
 - [ ] Recorded 60–90 second demo.
 
-Python Phases 0 and 1 are tracked separately above; subsequent Python/SQLite workflows, optional AI work, and later sprints remain incomplete. These browser checks do not assert that the original local-app release gates passed.
+Python Phases 0–2 are tracked separately above; subsequent Python workflows, optional AI work, and later sprints remain incomplete. These browser checks do not assert that the original local-app release gates passed.

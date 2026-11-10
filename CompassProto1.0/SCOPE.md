@@ -1,115 +1,136 @@
-# Compass Alpha 0.1 — Product Scope and Build Contract
+# Compass Alpha 0.2 — Interactive audit scope and build contract
 
-**Status:** Tonight's runnable local prototype specification  
-**Timebox:** 3–5 focused hours (estimate, not guarantee)  
-**Team:** Initially one builder; designed for four-developer expansion  
-**Source idea:** Pranav's second proposal: privacy-first statement importer, SQLite financial records, local small language model, and conversational analysis.
+**Updated:** 2026-11-10. **State:** planned, building on completed Alpha 0.1. **Delivery window:** four relative weeks, two two-week sprints, four developers. [Weekly ownership and work packages](../DEVELOPMENT_PLAN.md) are the active delivery backlog. [Brand identity](../BRAND_IDENTITY.md) governs the new experience. The [old Alpha 0.1 scope](SCOPE_ALPHA_0_1.md) and phase reports preserve historical acceptance evidence.
 
-## 1. What Compass is
+“Audit” is the product name for a guided spending review. It is not a professional audit, bank-balance reconciliation, diagnosis, or certification of financial health.
 
-Compass is a **local-first personal financial assistant**. A person imports a supported bank-statement CSV, checks how the transactions were interpreted, sees accurate monthly financial summaries, asks common questions about spending, and models a hypothetical change to income or expenses. The only new product capability beyond the original assistant is a small **What If?** calculator. The local language model is optional tonight; financial arithmetic never depends on generated text.
+## 1. Product outcome
 
-**Product promise:** “Understand your money, inspect the numbers, and test your next move—on your own computer.”
+A student or young adult can import a supported CSV, check its interpretation, guess a category total, reveal recorded spending, inspect every contributing row, supply context or skip, and voluntarily explore a small adjustment.
 
-**Not the promise:** autonomous financial advice, bank synchronization, investment recommendations, guaranteed forecasts, or production-grade bank security.
+The required Alpha experience is **one complete guess → reveal → optional reaction → guided reflection → evidence/What If? loop**, presented as a short Money Wrapped. Financial tools remain directly accessible without playing. The local language model is optional at every stage.
 
-## 2. Target user and job to be done
+## 2. Starting point: reuse completed work
 
-A student or early-career adult with downloadable bank statements who wants to answer: “Where did my money go, and how would a new recurring expense affect my monthly cash flow?”
+The repo already implements CSV mapping and atomic import, source preservation, duplicate/overlap handling, SQLite persistence, effective classifications, six monthly summaries, five evidence-bearing tools, exact rent scenarios, confirmed deletion and a bounded local-only Ollama intent adapter. The recorded Alpha 0.1 baseline is 271 Python tests, 17 JavaScript tests, and browser/privacy release evidence in [PHASE5.md](PHASE5.md). These are previous release results, not proof of new features.
 
-**Tonight's hero journey:**
-1. Open Streamlit locally.
-2. Load the included fictional checking statement (and optionally savings statement).
-3. Confirm date, description, amount, and account columns.
-4. Review categorized transactions and monthly summary.
-5. Ask “How much did I spend on restaurants in May 2026?” and inspect the matching rows.
-6. Correct one category; see summaries update.
-7. Enter a proposed new monthly rent, specifying whether it **replaces existing rent** or is **additional**.
-8. View projected monthly surplus and six-month linear projection, with assumptions shown.
-9. Restart the app; imported transactions persist in local SQLite.
+Extend Python/Streamlit and the existing SQLite database. Do not restart the financial foundation, replace the UI stack, duplicate arithmetic in components, or make parity with the separate Pages demo a release dependency. Database changes require forward migrations that preserve existing source rows and corrections.
 
-## 3. User-visible modules
+Historical `ProtoToDo.md` phases 0–5 are completed checkpoints. References to “Phase 1” in the new direction mean the next Sprint 1/Weeks 1–2 feature work; the old Phase 1 importer is already done.
 
-### A. Import & review
-- CSV uploader, with date/description/amount/account mapping for the bundled format.
-- Supports signed amount convention: positive inflows, negative outflows. If a different CSV format is ambiguous, require mapping instead of guessing.
-- Show file-level import count, rejected rows, and duplicates.
-- Show editable category and transaction type; default ambiguous entries to **Needs review**.
-- Store original values alongside normalized values.
+## 3. Scope tiers and cheap extensions
 
-### B. Snapshot
-- Month selector; income, net expenses, and surplus.
-- Spending by category and a searchable/filterable transaction table.
-- Transfers between own accounts excluded from both income and expense.
-- Refunds offset the original expense category rather than count as wages.
-- Warnings for incomplete data, uncertain transaction types, and partial months.
+| Capability | Existing leverage | Alpha decision |
+| --- | --- | --- |
+| New identity and five coherent screen states | Existing app shell and evidence UI | Required in Week 1: tokens, lowercase wordmark, voice, readable responsive components |
+| One category guessing game | `analytics.summarize_month` and category totals | Required in Week 1; exact amount/difference and receipts |
+| Shared Insight objects | Existing transaction IDs, exclusions, month/category calculations | Required; one reusable contract for all new modes |
+| Merchant grouping and detail | Preserved descriptions and source IDs | Required narrow rules plus reviewable aliases; unknown names remain raw; no fuzzy auto-merges |
+| Recorded month comparisons | Existing month selectors and exact totals | Required narrow category comparison; expose coverage and reject incomparable filters |
+| Money Wrapped | Reuse Insight objects and evidence renderer | Required, up to three eligible cards; fewer cards or a helpful empty state are valid |
+| Guided Confessional | Existing question UI and session state | Required one bounded reflection; context optional and session-only by default |
+| Reactions/tone controls | Templates and optional current router | Required neutral/off and reviewed Gentle/Direct; Roast gated by explicit opt-in and eligible subjects |
+| Teach Me Why | Existing refund/transfer/surplus/scenario definitions | Required short reviewed explainers for those concepts; no general tutoring agent |
+| Local model integration | Existing schema/timeout/fallback module | Timebox one real installed-model smoke test in Week 2; deterministic flow is the release path |
+| Neutral Money Awards | Merchant/category facts already computed | Week 3 small extension: at most two templates; cut before the core loop |
+| Saved scenario inputs | Existing pure calculator | Week 3 stretch, maximum eight combined delivery hours (four engine, four storage); store inputs and revision, recompute explicitly |
+| One text-PDF layout | No current parser; CSV/source contract available | Week 2 gated stretch, maximum eight delivery hours total; no second layout or OCR |
 
-### C. Ask Compass
-- A chat-like input supporting **five deterministic intents**: monthly income, monthly expenses, spending by category, largest expenses, and monthly surplus.
-- Answers must include date range and transaction evidence; unknown questions get a supported-question suggestion.
-- Optional Ollama adapter for intent extraction and wording; never let it compute or invent dollar amounts. If Ollama is absent, deterministic routing still works.
+Payments, exports, bank sync, automatic advice, encrypted multi-user hosting, goals with notifications, model training, predictive cash flow, learned ranking, automatic merchant entity resolution, extensive themes and persistent chat memory are deferred. The former Sprint 1 saved-goals proposal is deferred; optional saved scenario inputs are the bounded substitute. Former Sprint 2 plan monitoring and forecasting baselines remain later work. Preserve these deferrals rather than implying they shipped.
 
-### D. What If?
-- User inputs: baseline month, proposed rent, **replace vs add**, extra monthly expenses, optional monthly income change, and optional savings target.
-- Calculate: projected monthly surplus = historical income − historical net expenses + adjustments. Replacing rent requires identifying existing rent; if unknown, ask the user to supply it rather than silently subtracting it.
-- Six-month projection = six × monthly surplus **only as a static illustrative estimate**; not a forecast with validated uncertainty.
-- Show baseline vs proposed and the arithmetic; flag negative surplus or missed savings target.
+## 4. First supported journey
 
-## 4. Data contract
+1. Open the local app with a clear fictional-demo option and the new identity.
+2. Import checking and savings CSVs using existing mapping/validation; review unknowns.
+3. Choose a month; see observed date range, imported accounts, unresolved value and incomplete-coverage warning.
+4. Choose an eligible category, enter a nonnegative exact-cent guess, and submit. No answer amount appears inside the unrevealed card or its accessible text.
+5. Reveal recorded net spending and the signed/absolute guess difference. Existing summary tools may still be opened independently; this is a voluntary game, not concealment of user data.
+6. Open receipts: filters, expenses/refunds, excluded unknowns/transfers, account labels, immutable source IDs/rows and calculation agree with the card.
+7. Optionally enable an eligible reaction. Add context, disagree, choose a suggested reflection or skip.
+8. Explore an existing What If? input with confirmation. Nothing inferred from a comment silently changes a financial assumption.
+9. Correct a source classification or import more activity; affected insights/reveals invalidate and recompute from current records.
+10. Restart to retain financial records and explicitly saved preferences. Clear local data to remove new persisted preferences/aliases and any optional saved inputs, as well as existing financial records.
 
-**Normalized transaction:** `transaction_id`, `date` (ISO), `description`, `amount` (signed decimal), `account`, `category`, `transaction_type` (`income|expense|refund|transfer|unknown`), `source_file`, `import_batch`, `original_row_json`, `user_edited`.
+## 5. Financial and insight contract
 
-**SQLite tables (minimum):** `imports`, `transactions`; optional `scenario_runs` if time remains. Use `Decimal` or integer cents for money. Do not use binary floating point for production arithmetic.
+### Immutable evidence
 
-**Duplicate policy:** identical re-import of a file must not create new rows; distinct transactions with same date/merchant/amount must not be silently merged. Prefer stable source transaction IDs when provided; otherwise use a source-file/row identity and flag cross-file possible duplicates for review.
+Keep the existing signed-cents convention, ISO dates, account/source identity, raw source JSON, original row ordinals, import hashes and separate predicted/override fields. Types remain `income|expense|refund|transfer|unknown`; category is separate. Existing ground truth and expected JSON remain test/audit-only.
 
-**Privacy boundary:** no cloud inference, telemetry, or external account access; local database and uploaded bytes remain on the device. This is an experimental prototype, **not** a security-audited financial application.
+New merchant aliases are explicit derived metadata, never replacements for original descriptions. Default grouping uses trimmed/case-normalized description text, without stripping meaningful digits or fuzzy merging. A reviewed alias maps an exact normalized description to a display merchant within a source/account scope. Alias changes have a revision and clear evidence. Merchant frequency counts included expense rows; label them purchases or transactions, not visits without separate visit evidence. Two legitimate identical-looking transactions still count twice.
 
-## 5. Included fictional statements
+### Shared Insight object
 
-- `synthetic_checking_2026_Jan-Jun.csv`: six complete months of fictional checking activity.
-- `synthetic_savings_2026_Jan-Jun.csv`: matching savings-side transfers, so account reconciliation can be tested.
-- `synthetic_ground_truth.csv`: expected category/type for every transaction; **test fixture only**, not imported into the app as user data.
-- `expected_monthly_totals.json`: known-correct totals by month; **test fixture only**.
+| Field | Meaning |
+| --- | --- |
+| `insight_id`, `schema_version` | Stable definition identity and version |
+| `insight_type`, `metric_definition` | Category net spending, merchant purchase total/count, or recorded comparison; explicit calculation semantics |
+| `period_start`, `period_end`, `filters` | Inclusive calendar interval; category/merchant/account scope |
+| `amount_cents`, `purchase_count` | Exact financial result and separately defined expense-row count, where applicable |
+| `included_transaction_ids` | Every contributing internal ID; never a truncated example presented as full evidence |
+| `excluded_transaction_ids`, `exclusion_reasons` | Relevant unknowns/transfers and any scope exclusions |
+| `refund_cents` | Explicit included refund offset for net-spending metrics |
+| `comparison` | Optional prior period, amount, contributing IDs, dollar delta and denominator status |
+| `coverage`, `warnings` | Observed dates, unresolved amounts, imported-account scope and unverified completeness |
+| `data_revision` | Fingerprint/revision covering contributing financial labels, imports and aliases; invalidates stale displays |
+| `eligibility`, `eligibility_reason` | Whether guessing, comparison, award and playful reaction are permitted |
 
-The statements intentionally contain payroll, rent, utilities, phone/internet, insurance, groceries, restaurants, transportation, subscriptions, a student loan payment, a refund, paired savings transfers, a peer reimbursement, a car repair, irregular freelance income, and an ambiguous cash withdrawal. Merchant names and all amounts are fictional.
+The engine validates the object before rendering. Narrative text receives an approved fact payload, not unrestricted raw statements. For Alpha, money/count/date slots are rendered by code into reviewed templates. If model-generated wording is attempted, reject unknown numeric claims, entities or changed filters and use the template. The model cannot create an Insight, change its evidence or calculate totals. User context stays outside the financial fact object.
 
-**Important:** the fixture includes a real existing rent expense. The UI must distinguish **new rent replacing current rent** from **rent added on top of existing expenses**. The older illustrative $3,200/$2,450 example is *not* the ground truth for these statements.
+### Arithmetic definitions
 
-## 6. Non-goals for tonight
+```text
+net_expenses = sum(expense outflow magnitudes) − sum(included refund inflows)
+verified_surplus = classified_income − net_expenses
+guess_delta = guess_cents − actual_recorded_cents
+absolute_guess_error = abs(guess_delta)
+recorded_change = current_net_spending − prior_net_spending
+replace_rent_delta = new_rent − confirmed_existing_rent
+additional_rent_delta = new_rent
+projected_surplus = baseline_surplus + income_adjustment − added_spending − rent_delta
+six_month_static_change = 6 × projected_surplus
+```
 
-- PDF import; live bank integration; authentication; hosting real statements; advanced ML forecasting; calibrated uncertainty; automatic optimization; plan-monitoring notifications; billing; investment or credit recommendations; generalized bank-format parsing; production encryption/security claims.
+Zero guess delta means equal; negative means underestimated; positive means overestimated. A percentage guess error is defined only for positive actual spending. A percentage month change is defined only with a positive prior denominator and comparable filters. Show the dollar change and a denominator explanation otherwise; never render infinity or a fabricated percentage.
 
-## 7. Definition of done (must all pass)
+Category guessing uses **net** expenses including category refunds and excluding transfers/unknowns. Merchant purchase-count/total cards use expense rows only and must say so; do not reuse that total as net spending. Merchant refund netting requires an explicit reviewed merchant match; unresolved matches remain visible. Do not infer a visit count from aggregated statement descriptions.
 
-1. App starts locally using documented commands.
-2. Both included statement CSVs import; no data leaves the machine.
-3. Re-import does not duplicate rows; same-amount genuine purchases remain distinct.
-4. Monthly totals match `expected_monthly_totals.json` after expected classifications are applied.
-5. Savings transfers do not inflate income or spending; refunds reduce expense totals.
-6. Unknown cash withdrawal is visibly flagged, not silently treated as confirmed spending.
-7. User edits a category and sees the affected report update.
-8. At least five supported questions produce correct, evidence-backed responses.
-9. Rent replacement/addition calculations are distinguishable and tested.
-10. SQLite persistence works after restart; clear-all-data control requires confirmation.
+Comparisons use the same metric, effective category definition and account scope in each period. Missing prior data produces an unavailable state, not zero. Recorded-month comparisons retain both coverage warnings and never assert complete bank reconciliation or causal behavioral change. Nonpositive net-spending categories use a neutral refund/no-spend card rather than a guessing/roast target.
 
-**Cut order if running late:** optional Ollama → advanced visual polish → multiple arbitrary CSV formats. **Never cut** arithmetic correctness, basic import, evidence, or the What If? calculation.
+Any ratio or average used for a display is calculated outside the model with exact decimal/rational arithmetic. Proposed display rounding is two monetary decimals with an explicit policy; original amounts are never rounded or rewritten. Prefer existing exact What If? inputs over a new purchase-reduction simulator. A later simulator must label average-based amounts conditional and define rounding before implementation.
 
-## 8. Acceptance scenarios / examples
+## 6. Story selection and conversation
 
-- Import both files, select 2026-05: income **$3,700.00**, net expenses **$2,952.94**, surplus **$747.06** before transfers and unknowns.
-- Select 2026-06: income **$3,925.00**, net expenses **$2,213.55**, surplus **$1,711.45**; show **$80.00 ATM withdrawal as unresolved**, excluded from the verified surplus definition.
-- April's $24.99 grocery refund offsets groceries; it is not wage income.
-- Each $300 checking-to-savings transfer has an equal $300 savings inflow; neither is an expense/income.
-- If May's existing rent is $1,275 and proposed rent is $1,500 **replacement**, surplus becomes $747.06 − ($1,500 − $1,275) = **$522.06**.
-- If $1,500 rent is **additional**, surplus becomes $747.06 − $1,500 = **−$752.94**.
+Use deterministic, inspectable selection: selected category total, a supported repeated-merchant fact, and a comparable prior-period fact when available. Stable ties use a documented key; no invented confidence score or arbitrary weighted “financial health” ranking. Never force three cards when the data supports only one.
 
-## 9. Four-week roadmap (not tonight's acceptance criteria)
+The Confessional has a bounded question, optional context, acknowledgement and optional next action. Tone off is the default. Gentle/Direct are selected by the user; Roast requires separate opt-in. Only reviewed discretionary categories/templates are eligible. Sensitive/custom/unknown categories receive neutral language. Do not infer motives or treat user context as a transaction correction. Context is session-only in the required scope; persistent personalization requires explicit separate design and deletion coverage.
 
-**Sprint 1 (Weeks 1–2):** stabilize ingestion and normalization; support one PDF template; expand local AI tool calling; persistent goals and saved scenarios; regression tests; end-to-end user flow.
+At most two awards describe measured patterns without moral judgment, such as a clearly defined most-frequent eligible merchant. Suppress award/roast generation when eligibility, coverage or count evidence is insufficient. No joke in financial errors, X-Ray, hardship, healthcare, housing or debt-distress content. The ordinary tools and skip/off controls remain accessible.
 
-**Sprint 2 (Weeks 3–4):** plan re-evaluation after new imports; better source provenance and correction propagation; risk/sensitivity checks; compare categorization and forecasting baselines; user tests; reproducible demo and report.
+## 7. Local state and privacy
 
-## 10. Commercial positioning and validation
+Persist only necessary financial records, explicit alias edits and user-selected preferences. New tables need a migration, restart test and atomic inclusion in **Clear all local data**. Default tone stays off until set; do not treat opening a story as consent to Roast. Optional scenario persistence stores inputs plus baseline revision, not an authoritative cached financial answer.
 
-Competitors already provide financial analysis, planning, and chat. Compass must **test**, not assume, a differentiator: local ownership + inspectable calculations + reusable what-if scenarios. Tonight's release proves the interaction, not market demand. Test with representative users before claiming sellability. Never present synthetic data as a real person's finances.
+No analytics, financial uploads, remote font/CDN dependency, cloud inference, or external account access. Usability research uses fictional data and separately consented, minimal notes. No raw statements/context in logs or published artifacts. Installing dependencies/models is a separate network action. The existing local-only/unencrypted/unauthenticated and logical-deletion limitations still apply.
+
+## 8. Stretch admission and cut rules
+
+The Week 2 PDF spike starts only after the Week 1 loop and core regression checks are green and Dev 1 has capacity. It supports one declared text layout with synthetic fixtures, row/page provenance and explicit rejection of scanned/unsupported documents. If it does not meet the same import contract within eight combined delivery hours, leave CSV as the supported input and record the spike; do not expose a partial parser. No second format or OCR enters this plan.
+
+The Week 3 saved-input spike starts only after correction invalidation, preference deletion and the complete core flow pass. Stop after eight combined delivery hours if schema/deletion/revision handling is not ready. Optional awards and animations are cut before evidence or core integration. Unfinished model wording always falls back to reviewed templates.
+
+## 9. Alpha 0.2 release gate
+
+| Required evidence | Observable pass |
+| --- | --- |
+| Brand and journey | Five coherent screen states implemented at least for the core path; keyboard, contrast states, reduced-motion and 390px/desktop checks recorded |
+| Exact reveal | May Groceries recorded net spending is **$299.78**; a **$250.00** guess yields **−$49.78** signed delta and **$49.78** absolute error, with source rows |
+| Existing regressions | May income $3,700.00/net expenses $2,952.94/surplus $747.06; rent replace $522.06/additional −$752.94; June $80 unknown remains visible |
+| Grounded cards | Amounts/counts/periods reconstruct from every included ID; refunds, missing prior month, zero denominator and duplicate-looking transactions have tests |
+| Freshness | Import/edit/alias changes invalidate affected cards; stale reveals do not remain definitive |
+| Choice and tone | Off default; separate Roast opt-in; sensitive topics neutral; skip/disagree/context-empty paths complete |
+| Privacy/deletion | No external processing in default flow; all new persisted state survives restart and is removed by confirmed deletion |
+| Robust fallback | Complete journey works with no model installed or with Ollama stopped/invalid/timeout responses |
+| Release evidence | Updated browser smoke, clean-machine instructions, formative findings, known limits and a new fictional audit demo |
+
+No new checkbox becomes complete from planning alone. Weekly acceptance and evidence ownership are defined in [DEVELOPMENT_PLAN.md](../DEVELOPMENT_PLAN.md).

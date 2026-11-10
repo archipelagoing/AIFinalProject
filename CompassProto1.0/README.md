@@ -4,7 +4,9 @@
 
 **A private, local-first financial assistant with an inspectable What If? calculator.**
 
-> **Status:** Python CSV import, atomic SQLite persistence, safe overlap warnings, explicit column mapping, editable classifications, transfer-pair evidence, and month/category snapshots are implemented. Financial question routing and What If? integration are still being built. Run from the repository root. All bundled financial data is fictional. Compass Alpha is experimental software, not a security-audited banking application or a source of personalized financial advice.
+> **Current planning:** This document records the Alpha 0.1 technical foundation. The interactive-audit direction and four-week delivery plan are defined in the [root README](../README.md), [Alpha 0.2 scope](SCOPE.md), and [developer plan](../DEVELOPMENT_PLAN.md). Former product/roadmap statements below are historical; financial source/accounting contracts remain the implementation reference.
+
+> **Status:** CSV import/review, SQLite persistence, summaries, five financial question tools, What If?, confirmed local deletion and release checks are implemented. The new guessing/Wrapped/reflection experience and brand application remain planned. Run from the repository root. All bundled financial data is fictional. Compass Alpha is experimental software, not a security-audited banking application or a source of personalized financial advice.
 
 ## 1. What exactly is Compass?
 
@@ -384,9 +386,9 @@ Run `python -m pytest -q` and verify:
 
 **Non-goals:** Bank synchronization, investment advice, automatic payment initiation, subscription billing, advanced ML forecasts tonight, multi-agent system, general-purpose financial optimization, public upload hosting.
 
-## 12. Codex implementation instruction
+## 12. Historical Alpha 0.1 implementation instruction
 
-Copy this into Codex after opening the folder:
+The following prompt records the original build sequence, which is now complete. For new work, follow the current [Alpha 0.2 scope](SCOPE.md) and [developer plan](../DEVELOPMENT_PLAN.md).
 
 > Read `CompassProto1.0/README.md`, `CompassProto1.0/SCOPE.md`, and `CompassProto1.0/ProtoToDo.md` completely from the repository root. Continue the local Streamlit application for Compass Alpha 0.1 from its completed Phase 0 foundation. Start with the first P0-A vertical slice: import the fictional checking CSV, store transactions in SQLite, and display the correct May 2026 summary. Then add savings transfers, correction persistence, deterministic financial questions, and the exact What If? engine. Implement pure money arithmetic in integer cents. Use `synthetic_ground_truth.csv` and `expected_monthly_totals.json` only in tests or the separate evaluation audit; never use them to answer the app's financial questions. Do not add cloud services or make Ollama mandatory. After each phase, run tests and mark TODO boxes complete only when their acceptance tests pass. Deliver source files, tests, dependency manifest, and a final report of completed and incomplete P0 items. Do not claim this is a production-secure finance app.
 
@@ -399,4 +401,4 @@ Copy this into Codex after opening the folder:
 | AI | Financial tool routing, optional local LLM, grounded answers | Five reliable Q&A intents |
 | Product | Streamlit experience, What If? engine, integration | End-to-end May scenario demo |
 
-**Product direction:** Keep the original private assistant intact. Improve it with inspectable financial calculations and a small, reusable decision-planning experience. Competitive differentiation remains a hypothesis to test, not a proven market advantage.
+**Current product direction:** Reuse the completed private assistant as the foundation for the branded interactive monthly audit in the [root README](../README.md). The current [four-week plan](../DEVELOPMENT_PLAN.md) assigns Dev 1–4; the role table above records the original foundation handoff. [SCOPE.md](SCOPE.md) governs Alpha 0.2; [SCOPE_ALPHA_0_1.md](SCOPE_ALPHA_0_1.md) preserves the prior build contract. Commercial differentiation remains a hypothesis to test.

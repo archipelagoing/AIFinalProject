@@ -4,6 +4,42 @@
 
 *Your friendly, private personal financial assistant.*
 
+## Run the local Python foundation
+
+**Phase 0 is implemented:** a runnable Streamlit setup screen, local SQLite schema, exact-money and immutable-source contracts, fictional fixtures, and an independent fixture audit. Python CSV ingestion and the full assistant workflow are later phases. The separate [GitHub Pages prototype](https://archipelagoing.github.io/AIFinalProject/) remains available.
+
+Requires **Python 3.11+**. Fresh-environment verification used Python 3.12.2, Streamlit 1.67.0, and pytest 9.2.0. Run these commands from the repository root.
+
+macOS / Linux:
+
+```sh
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements.txt
+streamlit run app.py
+```
+
+Windows PowerShell:
+
+```powershell
+py -3 -m venv .venv
+.venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
+streamlit run app.py
+```
+
+The app binds to `127.0.0.1:8501`. It needs no cloud key or Ollama. Verification commands, after activating the virtual environment:
+
+```sh
+python -m pip check
+python scripts/audit_fixtures.py
+python -m pytest -q
+```
+
+The standalone audit uses only Python's standard library. Its `--json` option reports exact cents; a mismatch exits with status 1 and never rewrites expected values. Evaluation oracles are never read by the app.
+
+See [Phase 0 implementation and verification](CompassProto1.0/PHASE0.md) for contracts, schema, fixtures, and remaining work. The product pitch below describes the broader planned application.
+
 ## A. What Is Compass?
 
 Compass is a local-first, Small Language Model (SLM)-powered personal finance application that allows users to talk to their financial information like they would talk to a friendly, knowledgeable accountant.

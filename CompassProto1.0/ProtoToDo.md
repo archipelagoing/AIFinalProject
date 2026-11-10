@@ -1,8 +1,8 @@
 # Compass Alpha 0.1 — Implementation TODO
 
-> **GitHub Pages adaptation:** The core browser prototype now lives in [`../docs/`](../docs/README.md), with implementation notes, local-run commands, deployment instructions, and demo steps. This uses JavaScript and browser localStorage in place of the Python/Streamlit/SQLite stack below. The original checklist remains unchanged so local-app requirements are not falsely marked complete. See the browser checkpoint at the end of this file.
+> **Two implementations:** The browser prototype lives in [`../docs/`](../docs/README.md). The repository-root Python/Streamlit application now implements [Phase 0](PHASE0.md). Checkboxes below refer to Python requirements; separate browser evidence remains at the end of this file.
 
-**Status:** Specification, not evidence of implementation. **Target:** local runnable alpha, one focused evening (4–6+ hours is possible; timeboxes are estimates). **Source:** Pranav's local-first statement analysis assistant, extended by one deterministic What If? engine.
+**Status (2026-11-10):** Python Phase 0 implemented and locally verified; later Python phases remain incomplete. **Target:** local runnable alpha (timeboxes below are estimates). **Source:** Pranav's local-first statement analysis assistant, extended by one deterministic What If? engine.
 
 ## Rules and priorities
 
@@ -15,12 +15,14 @@
 
 ## Phase 0 — Repo, contracts, and fixture audit (0:00–0:30)
 
-- [ ] **P0-A** Create `app.py`, `requirements.txt`, `compass/{db,importer,classification,analytics,questions,scenarios}.py`, `tests/`, `.gitignore`, `README.md`. **Pass:** `streamlit run app.py` starts without import errors.
-- [ ] **P0-A** Pin compatible dependency ranges; use Python 3.11+; provide macOS/Linux and Windows commands. **Pass:** fresh virtual environment can install and start app.
-- [ ] **P0-A** Keep demo fixtures in `fixtures/`; copy the provided two statement CSVs, `synthetic_ground_truth.csv`, and `expected_monthly_totals.json`. **Pass:** fixture files can be read; app UI labels them fictional.
-- [ ] **P0-A** Lock amount conventions: signed inflow `+`, outflow `−`, integer cents internally; ISO date; account identity; type `income|expense|refund|transfer|unknown`; category separate from type. **Pass:** contract tests pass for each type.
-- [ ] **P0-A** Lock normalized fields and immutable source fields (see README). **Pass:** source amount/date/description cannot be overwritten by a user classification edit.
-- [ ] **P0-A** Check fixture totals against supplied expected JSON independently of app; don't change expected values to make tests pass. **Pass:** discrepancies are reported rather than silently corrected.
+- [x] **P0-A** Create `app.py`, `requirements.txt`, `compass/{db,importer,classification,analytics,questions,scenarios}.py`, `tests/`, `.gitignore`, `README.md`. **Pass:** `streamlit run app.py` starts without import errors.
+- [x] **P0-A** Pin compatible dependency ranges; use Python 3.11+; provide macOS/Linux and Windows commands. **Pass:** fresh virtual environment can install and start app.
+- [x] **P0-A** Keep demo fixtures in `fixtures/`; copy the provided two statement CSVs, `synthetic_ground_truth.csv`, and `expected_monthly_totals.json`. **Pass:** fixture files can be read; app UI labels them fictional.
+- [x] **P0-A** Lock amount conventions: signed inflow `+`, outflow `−`, integer cents internally; ISO date; account identity; type `income|expense|refund|transfer|unknown`; category separate from type. **Pass:** contract tests pass for each type.
+- [x] **P0-A** Lock normalized fields and immutable source fields (see README). **Pass:** source amount/date/description cannot be overwritten by a user classification edit.
+- [x] **P0-A** Check fixture totals against supplied expected JSON independently of app; don't change expected values to make tests pass. **Pass:** discrepancies are reported rather than silently corrected.
+
+**Phase 0 evidence (2026-11-10):** Fresh Python 3.12.2 virtual environment installed Streamlit 1.67.0 / pytest 9.2.0; `pip check` clean; 58 Python tests passed, including Streamlit AppTest and Python/SQLite source immutability. Independent standard-library audit passed for 164 transactions and all six monthly totals; an intentionally altered fixture fails with explicit mismatches and unchanged expected JSON. The live Streamlit process started on `127.0.0.1:8501` and its health endpoint returned `ok`. Existing 17 JavaScript tests passed. See [PHASE0.md](PHASE0.md). Next: Phase 1 checking-CSV ingestion and May snapshot. Native Windows execution is not claimed.
 
 ## Phase 1 — First vertical slice: import → May summary (0:30–1:30)
 
@@ -137,4 +139,4 @@ Verified by `npm test` (Node 22+; no dependency installation):
 - [x] Successful remote GitHub Pages deployment verified: [live prototype](https://archipelagoing.github.io/AIFinalProject/), [successful workflow](https://github.com/archipelagoing/AIFinalProject/actions/runs/42760426153). Public HTML, JavaScript, CSS, and both demo CSVs match the tested source bytes. An overlapping legacy branch deployment initially served the README; rerunning the configured Actions deployment resolved it.
 - [ ] Recorded 60–90 second demo.
 
-Stack-specific Python/SQLite acceptance checks, optional AI work, and later sprints remain deferred for this browser edition. These checked browser tests do not assert that the original local-app release gates passed.
+Python Phase 0 is tracked separately above; subsequent Python/SQLite workflows, optional AI work, and later sprints remain incomplete. These browser checks do not assert that the original local-app release gates passed.

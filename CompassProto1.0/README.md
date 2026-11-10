@@ -1,10 +1,10 @@
 # Compass Alpha 0.1
 
-> **Browser prototype:** A GitHub Pages implementation is now available in [`../docs/`](../docs/README.md). It adapts the core workflow below to JavaScript and browser storage. The Python/Streamlit/SQLite architecture in this document remains the original local-app specification, not an implemented Python application.
+> **Implementation status:** The root-level Python/Streamlit [Phase 0 foundation](PHASE0.md) is implemented and tested. Run it with the commands in the [root README](../README.md#run-the-local-python-foundation). The separate GitHub Pages prototype in [`../docs/`](../docs/README.md) uses JavaScript and browser storage.
 
 **A private, local-first financial assistant with an inspectable What If? calculator.**
 
-> **Status:** This repository package is a **build specification and synthetic test dataset**, not yet a completed Streamlit app. The commands below work **after** the application and dependency files have been implemented. All bundled financial data is fictional. Compass Alpha is experimental software, not a security-audited banking application or a source of personalized financial advice.
+> **Status:** Phase 0 provides a runnable Streamlit setup screen, SQLite schema, contracts, fixtures, and an independent audit; the complete Python assistant is still being built. Run the commands below from the repository root. All bundled financial data is fictional. Compass Alpha is experimental software, not a security-audited banking application or a source of personalized financial advice.
 
 ## 1. What exactly is Compass?
 
@@ -23,7 +23,7 @@ Compass preserves the central idea of **Pranav's second proposal**: import downl
 | File | Purpose | Production runtime? |
 |---|---|---|
 | `SCOPE.md` | Product scope and non-goals | Developer reference |
-| `TODO.md` | Prioritized implementation tasks and acceptance tests | Developer reference |
+| `ProtoToDo.md` | Prioritized implementation tasks and acceptance tests | Developer reference |
 | `synthetic_checking_2026_Jan-Jun.csv` | Fictional checking account statement | Demo input |
 | `synthetic_savings_2026_Jan-Jun.csv` | Fictional savings account statement | Demo input |
 | `synthetic_ground_truth.csv` | Expected classifications by transaction ID | **Tests only** |
@@ -39,7 +39,7 @@ compass-alpha/
 ├── requirements.txt               # Dependencies (created by implementation)
 ├── README.md
 ├── SCOPE.md
-├── TODO.md
+├── ProtoToDo.md
 ├── .gitignore
 ├── compass/
 │   ├── __init__.py
@@ -65,11 +65,11 @@ compass-alpha/
 └── .local/                          # Ignored app database / uploads, if used
 ```
 
-The current package keeps the four fixture files alongside this README; the implementer may move/copy them into `fixtures/` and update test paths consistently.
+The four originals remain alongside this README. Identical runnable-app copies now live in the repository-root `fixtures/` folder. The root `app.py`, `requirements.txt`, `compass/`, and `tests/python/` implement Phase 0; the tree above continues to describe the fuller planned application.
 
-## 4. Installation and local run (once implemented)
+## 4. Installation and local run (Phase 0 foundation)
 
-Requires **Python 3.11+** and a local machine. No cloud key should be required.
+Requires **Python 3.11+** and a local machine. Run from the repository root. No cloud key is required. These commands start the Phase 0 setup screen; later workflows remain planned.
 
 macOS/Linux:
 
@@ -388,7 +388,7 @@ Run `python -m pytest -q` and verify:
 
 Copy this into Codex after opening the folder:
 
-> Read `README.md`, `SCOPE.md`, and `TODO.md` completely. Build a runnable local Streamlit application for Compass Alpha 0.1. Start with the first P0-A vertical slice: import the fictional checking CSV, store transactions in SQLite, and display the correct May 2026 summary. Then add savings transfers, correction persistence, deterministic financial questions, and the exact What If? engine. Implement pure money arithmetic in integer cents. Use `synthetic_ground_truth.csv` and `expected_monthly_totals.json` **only in tests**; never use them to answer the app's financial questions. Do not add cloud services or make Ollama mandatory. After each phase, run tests and mark TODO boxes complete only when their acceptance tests pass. Deliver source files, tests, dependency manifest, and a final report of completed and incomplete P0 items. Do not claim this is a production-secure finance app.
+> Read `CompassProto1.0/README.md`, `CompassProto1.0/SCOPE.md`, and `CompassProto1.0/ProtoToDo.md` completely from the repository root. Continue the local Streamlit application for Compass Alpha 0.1 from its completed Phase 0 foundation. Start with the first P0-A vertical slice: import the fictional checking CSV, store transactions in SQLite, and display the correct May 2026 summary. Then add savings transfers, correction persistence, deterministic financial questions, and the exact What If? engine. Implement pure money arithmetic in integer cents. Use `synthetic_ground_truth.csv` and `expected_monthly_totals.json` only in tests or the separate evaluation audit; never use them to answer the app's financial questions. Do not add cloud services or make Ollama mandatory. After each phase, run tests and mark TODO boxes complete only when their acceptance tests pass. Deliver source files, tests, dependency manifest, and a final report of completed and incomplete P0 items. Do not claim this is a production-secure finance app.
 
 ## 13. Team handoff after tonight
 

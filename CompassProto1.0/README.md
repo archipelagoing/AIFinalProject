@@ -1,5 +1,7 @@
 # Compass Alpha 0.1
 
+> **Browser prototype:** A GitHub Pages implementation is now available in [`../docs/`](../docs/README.md). It adapts the core workflow below to JavaScript and browser storage. The Python/Streamlit/SQLite architecture in this document remains the original local-app specification, not an implemented Python application.
+
 **A private, local-first financial assistant with an inspectable What If? calculator.**
 
 > **Status:** This repository package is a **build specification and synthetic test dataset**, not yet a completed Streamlit app. The commands below work **after** the application and dependency files have been implemented. All bundled financial data is fictional. Compass Alpha is experimental software, not a security-audited banking application or a source of personalized financial advice.

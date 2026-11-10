@@ -136,7 +136,7 @@ export function summarize(transactions, month) {
   const transfers = rows.filter(t => t.type === 'transfer');
   const income = sum(incomeRows.map(t => t.amount_cents));
   const expenses = sum(expenseRows.map(t => -t.amount_cents));
-  const categories = {};
+  const categories = Object.create(null);
   for (const t of expenseRows) categories[t.category] = exact((categories[t.category] ?? 0) - t.amount_cents);
   const dates = rows.map(t => t.date).sort();
   const warnings = [];

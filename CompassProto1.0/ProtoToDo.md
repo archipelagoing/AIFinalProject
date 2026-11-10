@@ -1,5 +1,7 @@
 # Compass Alpha 0.1 — Implementation TODO
 
+> **GitHub Pages adaptation:** The core browser prototype now lives in [`../docs/`](../docs/README.md), with implementation notes, local-run commands, deployment instructions, and demo steps. This uses JavaScript and browser localStorage in place of the Python/Streamlit/SQLite stack below. The original checklist remains unchanged so local-app requirements are not falsely marked complete. See the browser checkpoint at the end of this file.
+
 **Status:** Specification, not evidence of implementation. **Target:** local runnable alpha, one focused evening (4–6+ hours is possible; timeboxes are estimates). **Source:** Pranav's local-first statement analysis assistant, extended by one deterministic What If? engine.
 
 ## Rules and priorities
@@ -111,3 +113,23 @@
 | Product | Streamlit, scenario pure function, UX and integration | May rent tests and full hero journey green |
 
 **First checkpoint:** correctly import the checking CSV and show May 2026 income `$3,700.00`, net expenses `$2,952.94`, surplus `$747.06` **without reading the expected totals file inside the app**.
+
+## GitHub Pages browser checkpoint
+
+Verified by `npm test` (Node 22+; no dependency installation):
+
+- [x] Checking-only May vertical slice computes the specified totals through production classification rules.
+- [x] Both fictional statements yield 164 records and every reference classification matches in tests.
+- [x] All six monthly summaries and category sums match the supplied exact-cent expectations.
+- [x] Atomic CSV validation, renamed-file idempotence, account-scoped IDs, repeated legitimate purchases, overlapping-file rejection, and conflicting-ID rejection.
+- [x] Transfers and refunds have correct accounting treatment; June ATM stays unknown and excluded.
+- [x] Classification overrides preserve source rows and change aggregates; storage serialization preserves them on reopen.
+- [x] Five deterministic question handlers expose matching source rows and reject unsupported/ambiguous periods.
+- [x] Replacement/additional rent, cheaper rent, signed income changes, missing rent, and six-month arithmetic pass exact-cent tests.
+- [x] Saved-state reopening, quota-failure preservation, and removal of only the Compass storage key pass storage-adapter tests.
+- [x] Published demo copies match source statements; production code never reads classification/totals oracles.
+- [ ] Full browser walkthrough including corrections, reload persistence, deletion, keyboard navigation, and mobile layout. Automated browser access was unavailable during initial implementation; HTTP preview readiness alone does not satisfy this gate.
+- [ ] Successful remote GitHub Pages deployment verified. The workflow is prepared; verify the deployed workflow/environment before marking this complete.
+- [ ] Recorded 60–90 second demo.
+
+Stack-specific Python/SQLite acceptance checks, optional AI work, and later sprints remain deferred for this browser edition. These checked browser tests do not assert that the original local-app release gates passed.

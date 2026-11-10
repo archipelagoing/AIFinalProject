@@ -38,7 +38,7 @@ function table(rows, editable = false) {
   }).join('')}</tbody></table></div>`;
 }
 function warnings(summary) {
-  return `<details class="quality-warning"><summary>${summary.unknown.length ? `${summary.unknown.length} unresolved transaction(s) · ` : ''}Coverage and exclusions — inspect before relying on totals</summary><ul>${summary.warnings.map(x => `<li>${escape(x)}</li>`).join('')}<li>Verified means classified by rules or your corrections, not reconciled to a bank balance.</li></ul></details>`;
+  return `<details class="quality-warning"><summary>${summary.unknown.length ? `${summary.unknown.length} unresolved transaction(s), ${money(summary.unknown.reduce((n, t) => n + Math.abs(t.amount_cents), 0))} excluded · ` : ''}Coverage and exclusions — inspect before relying on totals</summary><ul>${summary.warnings.map(x => `<li>${escape(x)}</li>`).join('')}<li>Verified means classified by rules or your corrections, not reconciled to a bank balance.</li></ul></details>`;
 }
 function evidence(summary, rows, label = 'Inspect source transactions') {
   return `<details class="evidence"><summary>${escape(label)} (${rows.length})</summary><p class="small muted">Period: ${escape(monthName(summary.month))}. Source amount, account, date, description, and ID are preserved from the statement.</p>${table(rows)}</details>`;
@@ -57,7 +57,7 @@ function render() {
   $('#empty').hidden = available.length > 0; $('#workspace').hidden = !available.length;
   if (!available.length) return;
   const summary = summarize(state.transactions, selectedMonth);
-  const allDemo = state.imports.every(i => i.filename.startsWith('synthetic_'));
+  const allDemo = state.imports.every(i => i.fictional_demo === true);
   $('#dataset-label').textContent = allDemo ? 'Fictional demo data' : 'Imported statement data';
   $('#dataset-detail').textContent = `· ${state.transactions.length} transactions · ${new Set(state.transactions.map(t => t.account)).size} accounts`;
   $('#quality').innerHTML = warnings(summary);
@@ -132,12 +132,15 @@ function renderAnswer() {
 async function loadDemo() {
   const buttons = [$('#demo-button'), $('#load-demo')]; buttons.forEach(b => b.disabled = true);
   try {
+    const original = state;
     let next = state; let added = 0;
     for (const name of ['synthetic_checking_2026_Jan-Jun.csv', 'synthetic_savings_2026_Jan-Jun.csv']) {
       const response = await fetch(new URL(`./demo/${name}`, import.meta.url));
       if (!response.ok) throw new Error('Demo files could not be loaded. Check your connection and try again.');
       const result = await importCSV(next, await response.text(), name); next = result.state; added += result.added;
+      next = { ...next, imports: next.imports.map(i => i.filename === name ? { ...i, fictional_demo: true } : i) };
     }
+    if (state !== original) throw new Error('Workspace changed while the demo was loading. Try loading it again; your latest changes were kept.');
     commit(next); selectedMonth = '2026-05'; render();
     notice(added ? `Loaded ${added} fictional transactions. Select a month to explore; original data and corrections stay in this browser.` : 'The fictional statements are already loaded. Existing corrections were kept.');
   } catch (error) { notice(error.message, true); }
@@ -155,7 +158,9 @@ $('#file-input').onchange = async event => {
   try {
     if (file.size > 5 * 1024 * 1024) throw new Error('Choose a CSV smaller than 5 MB for this browser-storage prototype.');
     const text = new TextDecoder('utf-8', { fatal: true }).decode(await file.arrayBuffer());
-    const result = await importCSV(state, text, file.name);
+    const original = state;
+    const result = await importCSV(original, text, file.name);
+    if (state !== original) throw new Error('Workspace changed during this import. Try again; your latest changes were kept.');
     commit(result.state); render(); $('#modal').close(); notice(result.message);
   } catch (error) { if ($('#import-message')) $('#import-message').textContent = error instanceof TypeError ? 'Could not decode this file as UTF-8. Save it as a UTF-8 CSV and try again.' : error.message; else notice(error.message, true); }
   finally { event.target.value = ''; if (button) button.disabled = false; }

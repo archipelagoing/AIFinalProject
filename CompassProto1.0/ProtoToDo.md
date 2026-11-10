@@ -129,7 +129,7 @@ Verified by `npm test` (Node 22+; no dependency installation):
 - [x] Saved-state reopening, quota-failure preservation, and removal of only the Compass storage key pass storage-adapter tests.
 - [x] Published demo copies match source statements; production code never reads classification/totals oracles.
 - [ ] Full browser walkthrough including corrections, reload persistence, deletion, keyboard navigation, and mobile layout. Automated browser access was unavailable during initial implementation; HTTP preview readiness alone does not satisfy this gate.
-- [ ] Successful remote GitHub Pages deployment verified. The workflow is prepared; verify the deployed workflow/environment before marking this complete.
+- [x] Successful remote GitHub Pages deployment verified: [live prototype](https://archipelagoing.github.io/AIFinalProject/), [successful workflow](https://github.com/archipelagoing/AIFinalProject/actions/runs/42760426153). Public HTML, JavaScript, CSS, and both demo CSVs match the tested source bytes. An overlapping legacy branch deployment initially served the README; rerunning the configured Actions deployment resolved it.
 - [ ] Recorded 60–90 second demo.
 
 Stack-specific Python/SQLite acceptance checks, optional AI work, and later sprints remain deferred for this browser edition. These checked browser tests do not assert that the original local-app release gates passed.

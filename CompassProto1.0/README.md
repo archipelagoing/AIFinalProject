@@ -1,6 +1,6 @@
 # Compass Alpha 0.1
 
-> **Implementation status:** The root-level Python/Streamlit [Phase 0 foundation](PHASE0.md), [Phase 1 import/snapshot](PHASE1.md), [Phase 2 complete importer/review](PHASE2.md), and [Phase 3 snapshot/Ask Compass](PHASE3.md) are implemented and tested. Run with the commands in the [root README](../README.md#run-the-local-python-foundation). The separate GitHub Pages prototype in [`../docs/`](../docs/README.md) uses JavaScript and browser storage.
+> **Implementation status:** The root-level Python/Streamlit [Phase 0 foundation](PHASE0.md), [Phase 1 import/snapshot](PHASE1.md), [Phase 2 complete importer/review](PHASE2.md), [Phase 3 snapshot/Ask Compass](PHASE3.md), and [Phase 4 What If? engine](PHASE4.md) are implemented and tested. Run with the commands in the [root README](../README.md#run-the-local-python-foundation). Phase 5 release/privacy work remains. The separate GitHub Pages prototype in [`../docs/`](../docs/README.md) uses JavaScript and browser storage.
 
 **A private, local-first financial assistant with an inspectable What If? calculator.**
 
@@ -364,9 +364,9 @@ Run `python -m pytest -q` and verify:
 - [ ] Transfers excluded; April refund offsets expense; June unknown flagged.
 - [ ] Five question handlers return correct values with evidence rows.
 - [ ] User category/type correction changes summaries and survives restart.
-- [ ] May rent **replace** = `$522.06`; **additional** = `−$752.94`.
-- [ ] Six-month projection is correct and labeled static.
-- [ ] Bad input, missing rent, partial months, and unsupported questions fail safely.
+- [x] May rent **replace** = `$522.06`; **additional** = `−$752.94`.
+- [x] Six-month projection is correct and labeled static.
+- [x] Bad input, missing rent, partial months, and unsupported questions fail safely.
 - [ ] Clear-all-data works after restart.
 - [ ] No unapproved cloud calls or real bank statement data in source control.
 

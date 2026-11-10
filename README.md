@@ -6,7 +6,7 @@
 
 ## Run the local Python foundation
 
-**Phases 0–3 are implemented:** import fictional checking and savings statements into local SQLite, review classifications, inspect monthly/category totals and data quality, and use five deterministic Ask Compass tools with source-row evidence. Duplicate/overlap warnings, explicit CSV mapping, and optional bounded local Ollama routing are included. What If? remains Phase 4 work. The separate [GitHub Pages prototype](https://archipelagoing.github.io/AIFinalProject/) remains available.
+**Phases 0–4 are implemented:** import fictional checking and savings statements into local SQLite, review classifications, inspect monthly/category totals and data quality, ask five supported financial questions, and compare exact-cent What If? scenarios. Duplicate/overlap warnings, explicit CSV mapping, and optional bounded local Ollama routing are included. Phase 5 release/privacy work remains. The separate [GitHub Pages prototype](https://archipelagoing.github.io/AIFinalProject/) remains available.
 
 Requires **Python 3.11+**. Fresh-environment verification used Python 3.12.2, Streamlit 1.67.0, and pytest 9.2.0. Run these commands from the repository root.
 
@@ -44,7 +44,9 @@ For uploads, keep each bank/source identity and account label consistent. Use **
 
 Use **Ask Compass** for income, net expenses, category spending, largest expenses, or verified surplus. Try `What was my surplus in June 2026?` or `How much did I spend on Groceries in April 2026?`. Questions without a month follow the selected snapshot month. Answers show filters, calendar dates, actual activity coverage, calculation, included rows, and month-wide excluded transfers/unknowns. Unsupported filters and ambiguous questions ask for clarification. No model is required.
 
-See [Phase 3 implementation and verification](CompassProto1.0/PHASE3.md) for question syntax, optional Ollama setup, evidence, and limitations. [Phase 2](CompassProto1.0/PHASE2.md), [Phase 1](CompassProto1.0/PHASE1.md), and [Phase 0](CompassProto1.0/PHASE0.md) record the earlier checkpoints. The product pitch below describes the broader planned application.
+Open **What If?**, select the baseline month, and explicitly choose **replace** or **additional** rent. With May and proposed rent `1500.00`, replacement yields **$522.06** monthly surplus; additional rent yields **−$752.94**. The app shows source rent evidence, exact formulas, income/spending adjustments, and six-month static extrapolation. Missing or ambiguous existing rent requires confirmation. Optional savings targets and a six-row table from a user-supplied starting balance are included; no balance is inferred from activity.
+
+See [Phase 4 implementation and verification](CompassProto1.0/PHASE4.md) for scenario behavior and limitations, and [Phase 3](CompassProto1.0/PHASE3.md) for questions and optional Ollama setup. [Phase 2](CompassProto1.0/PHASE2.md), [Phase 1](CompassProto1.0/PHASE1.md), and [Phase 0](CompassProto1.0/PHASE0.md) record the earlier checkpoints. The product pitch below describes the broader planned application.
 
 ## A. What Is Compass?
 

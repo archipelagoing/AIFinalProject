@@ -12,8 +12,8 @@ if sys.version_info < (3, 11):
 
 import streamlit as st
 
-from compass import analytics, classification, db, importer, ollama, questions
-from compass.contracts import Transaction, TransactionType, format_money
+from compass import analytics, classification, db, importer, ollama, questions, scenarios
+from compass.contracts import Transaction, TransactionType, format_money, parse_amount_cents
 from compass.mapping import ColumnMapping
 
 ROOT = Path(__file__).resolve().parent
@@ -120,6 +120,112 @@ def show_snapshot(connection: sqlite3.Connection) -> None:
         st.write("Rule: " + classification.classify(selected.description, selected.amount_cents).explanation)
         st.caption(f"Stable local record ID: {selected.id}; account identity: {selected.account_id}.")
     show_questions(transactions, imports, month)
+    show_scenarios(transactions, imports, month)
+
+
+def show_scenarios(transactions, imports: dict, selected_month: str) -> None:
+    st.subheader("What If?")
+    months = sorted({row.posted_date[:7] for row in transactions})
+    if st.session_state.get("scenario_month") not in months:
+        st.session_state["scenario_month"] = selected_month
+    month = st.selectbox("Scenario baseline month", months, key="scenario_month")
+    summary = analytics.summarize_month(transactions, month)
+    totals = summary.totals
+    st.caption("The scenario month can differ from the snapshot month. Baseline values use current effective classifications across all imported accounts; hypothetical inputs never edit transactions.")
+    columns = st.columns(3)
+    columns[0].metric("Scenario baseline income", format_money(totals.income_cents))
+    columns[1].metric("Scenario baseline net expenses", format_money(totals.net_expenses_cents))
+    columns[2].metric("Scenario baseline surplus", format_money(totals.surplus_cents))
+    st.write(f"Baseline surplus = {format_money(totals.income_cents)} classified income − {format_money(totals.net_expenses_cents)} net expenses = {format_money(totals.surplus_cents)}.")
+    with st.expander("Scenario baseline source rows"):
+        st.dataframe(evidence_rows(summary.rows, imports), hide_index=True)
+    st.warning("Statement coverage is unverified; this baseline month may be incomplete or atypical. Classified totals are not bank-balance reconciled. This is an illustrative scenario, not financial advice.")
+    show_quality(summary)
+    quality = analytics.data_quality(summary)
+    if quality.unknown_absolute_cents:
+        st.warning(f"Baseline excludes {format_money(quality.unknown_absolute_cents)} of unresolved activity, including {format_money(quality.unknown_outflow_cents)} outflows. Resolve missing classifications before relying on this scenario.")
+    rent = scenarios.identify_rent(summary.rows)
+    existing_rent = rent.existing_rent_cents
+    with st.expander("Historical rent evidence"):
+        st.caption("Only effective expense rows categorized Rent or Housing/Rent, or Housing with the word rent in the description, qualify. Other Housing spending and refunds are not treated as rent. Multiple charges require confirmation.")
+        st.dataframe(evidence_rows(rent.candidates, imports), hide_index=True)
+    mode = st.selectbox("Rent mode", ["replace", "additional"], index=None,
+                        placeholder="Choose replace or additional", key="scenario_mode")
+    if mode == "additional":
+        st.info("Additional rent is added in full. Any historical rent remains in baseline expenses; both costs count.")
+    manual = False
+    if mode == "replace":
+        if existing_rent is not None:
+            st.write(f"Identified existing rent already in baseline expenses: {format_money(existing_rent)}.")
+            manual = st.checkbox("Confirm a different existing rent amount", key="scenario_manual_rent")
+        else:
+            manual = True
+            st.warning(f"Existing rent is unresolved: {len(rent.candidates)} identifiable rent charges. Review the evidence and confirm the rent expense already included in this baseline. No definitive replacement result is available until confirmed.")
+    new_rent_text = st.text_input("Proposed monthly rent", value="1500.00", max_chars=64, key="scenario_new_rent")
+    spending_text = st.text_input("Added monthly spending", value="0.00", max_chars=64, key="scenario_added_spending")
+    income_text = st.text_input("Monthly income adjustment (signed)", value="0.00", max_chars=64, key="scenario_income_adjustment")
+    st.caption("Use plain dollar decimals with at most two decimal places, such as 1500.00 or -25.50. Proposed rent and added spending must be nonnegative. Inputs recalculate immediately.")
+    confirmed = True
+    if manual:
+        manual_text = st.text_input("Existing rent already included in baseline", max_chars=64, key=f"scenario_existing_{month}")
+        # Confirmation expires whenever baseline records, labels or the entered amount change.
+        context = repr((month, manual_text, [(row.id, row.amount_cents, row.effective_type.value,
+                         row.effective_category, row.has_correction) for row in summary.rows]))
+        signature = hashlib.sha256(context.encode()).hexdigest()
+        confirmed = st.checkbox("I confirm this existing rent expense is already included in the selected baseline", key=f"scenario_confirm_{signature}")
+    use_target = st.checkbox("Compare a monthly savings target", key="scenario_use_target")
+    target_text = st.text_input("Monthly savings target", value="0.00", max_chars=64, key="scenario_target") if use_target else None
+    use_start = st.checkbox("Show six months from a user-supplied starting balance", key="scenario_use_start")
+    start_text = st.text_input("Starting balance (user supplied)", max_chars=64, key="scenario_start") if use_start else None
+    if mode is None:
+        st.info("Choose a rent mode to calculate a scenario.")
+        return
+    if manual and not confirmed:
+        st.info("Confirm the existing rent before calculating a replacement result. Enter 0.00 only if you verified there is no rent expense in the baseline.")
+        return
+    try:
+        if manual:
+            existing_rent = parse_amount_cents(manual_text)
+            if existing_rent > totals.net_expenses_cents + sum(
+                    row.amount_cents for row in summary.expense_rows if row.effective_type == TransactionType.REFUND):
+                raise ValueError("Confirmed rent cannot exceed all expense outflows already in this baseline.")
+        inputs = scenarios.ScenarioInputs(
+            baseline_surplus_cents=totals.surplus_cents,
+            new_rent_cents=parse_amount_cents(new_rent_text), rent_mode=mode,
+            existing_rent_cents=existing_rent,
+            added_spending_cents=parse_amount_cents(spending_text),
+            income_adjustment_cents=parse_amount_cents(income_text),
+            savings_target_cents=parse_amount_cents(target_text) if target_text is not None else None,
+            starting_balance_cents=parse_amount_cents(start_text) if start_text is not None else None,
+        )
+        result = scenarios.calculate_scenario(inputs)
+    except ValueError as error:
+        st.error("Scenario input: " + str(error))
+        return
+    st.write("Baseline rent: " + (format_money(existing_rent) if existing_rent is not None else "not uniquely identified; additional mode does not subtract existing rent") + (" (user confirmed)." if manual else " (source evidence)." if existing_rent is not None else "."))
+    st.write(f"Rent mode: {mode}; proposed rent: {format_money(inputs.new_rent_cents)}.")
+    if mode == "replace":
+        st.write(f"Rent delta = {format_money(inputs.new_rent_cents)} − {format_money(existing_rent)} = {format_money(result.rent_delta_cents)}.")
+    else:
+        st.write(f"Rent delta = additional rent = {format_money(result.rent_delta_cents)}.")
+    st.write(f"Income adjustment: {format_money(inputs.income_adjustment_cents)}; added monthly spending: {format_money(inputs.added_spending_cents)}.")
+    st.write(f"Projected surplus = baseline surplus + income adjustment − added spending − rent delta = ({format_money(totals.surplus_cents)}) + ({format_money(inputs.income_adjustment_cents)}) − ({format_money(inputs.added_spending_cents)}) − ({format_money(result.rent_delta_cents)}) = {format_money(result.projected_surplus_cents)}.")
+    st.metric("Projected monthly surplus", format_money(result.projected_surplus_cents))
+    st.write(f"Difference from baseline = {format_money(result.projected_surplus_cents)} − ({format_money(totals.surplus_cents)}) = {format_money(result.difference_from_baseline_cents)}.")
+    if result.projected_surplus_cents < 0:
+        st.warning("Negative projected surplus: modeled monthly expenses exceed modeled income.")
+    st.metric("Six-month static extrapolation", format_money(result.six_month_static_cents))
+    st.write(f"6 × ({format_money(result.projected_surplus_cents)}) = {format_money(result.six_month_static_cents)}.")
+    st.caption("Assumes identical income and expenses every month. This static extrapolation is not an account balance or a statistically validated forecast. It omits bill timing, moving costs, deposits, inflation, interest and income volatility. Surplus does not establish available cash.")
+    if inputs.savings_target_cents is not None:
+        st.write(f"Monthly savings target: {format_money(inputs.savings_target_cents)}; projected surplus minus target: {format_money(result.savings_target_gap_cents)}. Target {'met' if result.savings_target_gap_cents >= 0 else 'not met'} under these assumptions; this does not verify funds are available.")
+    if result.cumulative_months:
+        st.write(f"User-supplied starting balance: {format_money(inputs.starting_balance_cents)}. No starting balance was inferred from statement activity.")
+        st.caption("Illustrative arithmetic only: user starting value + month number × projected surplus. These values are not verified bank balances or spendable-cash estimates.")
+        st.dataframe([{"Month number": row.month_number,
+                       "Cumulative change": format_money(row.cumulative_change_cents),
+                       "User starting value + cumulative change": format_money(row.starting_value_plus_change_cents)}
+                      for row in result.cumulative_months], hide_index=True)
 
 
 def show_quality(summary: analytics.MonthSummary) -> None:
@@ -269,7 +375,7 @@ def mapping_controls(upload) -> tuple[ColumnMapping | None, bool, str]:
 def main() -> None:
     st.set_page_config(page_title="Compass — local financial snapshot", page_icon="🧭")
     st.title("Compass Alpha 0.1")
-    st.caption("Private, local-first financial assistant · Phase 3 snapshot and Ask Compass")
+    st.caption("Private, local-first financial assistant · Phase 4 What If?")
     st.warning("All bundled demo statements are fictional. This experimental app is not financial advice.")
     st.caption("CSV files are processed locally and stored in SQLite. No cloud model or API key is required. Use fictional data while evaluating this experimental app.")
     database_path = Path(os.environ.get("COMPASS_DB_PATH", str(ROOT / ".local" / "compass.db")))
@@ -311,7 +417,7 @@ def main() -> None:
         st.write("Positive signed amounts are inflows; negative amounts are outflows. Money is stored as integer cents and dates as ISO YYYY-MM-DD.")
         st.write("Transaction types: " + ", ".join(classification.TRANSACTION_TYPES) + ". Categories are separate from types; transfers and unknowns are excluded from verified totals.")
         st.write("Original amount, date, description, account, source IDs, row data, and import metadata are preserved. Classification changes are stored separately.")
-    st.caption("What If? remains a later Python phase. Evaluation files never supply the app's financial answers.")
+    st.caption("What If? uses deterministic arithmetic and explicit assumptions. Evaluation files never supply the app's financial answers.")
 
 
 if __name__ == "__main__":

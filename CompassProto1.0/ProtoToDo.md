@@ -64,16 +64,18 @@
 
 ## Phase 4 — What If? engine (3:00–3:45)
 
-- [ ] **P0-A** Baseline month selector; derive **verified** income, net expense, and surplus from the same analytics engine. **Pass:** baseline equals snapshot exactly.
-- [ ] **P0-A** Input proposed rent (nonnegative), mode `replace` or `additional`, added monthly spending (nonnegative), and signed monthly income adjustment. **Pass:** invalid/nonfinite values rejected; cents remain exact.
-- [ ] **P0-B** For replacement mode, identify effective historical **Housing/Rent** expense for selected month; if none or multiple ambiguous rents, ask user to confirm the existing rent instead of guessing. **Pass:** unresolved rent blocks a definitive replacement result.
-- [ ] **P0-A** Implement `rent_delta = new_rent - existing_rent` for replace, `rent_delta = new_rent` for additional; `projected_surplus = baseline_surplus + income_adjustment - added_spending - rent_delta`. **Pass:** pure function tests; no float drift.
-- [ ] **P0-A** May 2026 test: baseline `$747.06`; replace `$1,275` rent with `$1,500` → `$522.06`; add `$1,500` rent → `−$752.94`. **Pass:** UI and unit tests match.
-- [ ] **P0-B** Display complete formula, baseline rent, rent delta, income adjustment, added spending, projected surplus, and difference from baseline. **Pass:** displayed arithmetic reconstructs output exactly.
-- [ ] **P0-B** Show six-month **static extrapolation** (`6 × projected monthly surplus`), not an account balance or statistically validated forecast; label constant-income/expense assumptions. **Pass:** no implied certainty or cash-on-hand claim.
-- [ ] **P0-B** Negative surplus warning and warning if selected month contains unknowns/partial coverage; include clear disclaimer that historical month may be atypical. **Pass:** negative May additional-rent scenario flagged.
-- [ ] **P1** Optional monthly savings target; compare projected monthly surplus to target without claiming funds are available as bank balance.
-- [ ] **P1** Optional six-row cumulative change table relative to a **user-supplied starting balance**, never inferred from statement activity.
+- [x] **P0-A** Baseline month selector; derive **verified** income, net expense, and surplus from the same analytics engine. **Pass:** baseline equals snapshot exactly.
+- [x] **P0-A** Input proposed rent (nonnegative), mode `replace` or `additional`, added monthly spending (nonnegative), and signed monthly income adjustment. **Pass:** invalid/nonfinite values rejected; cents remain exact.
+- [x] **P0-B** For replacement mode, identify effective historical **Housing/Rent** expense for selected month; if none or multiple ambiguous rents, ask user to confirm the existing rent instead of guessing. **Pass:** unresolved rent blocks a definitive replacement result.
+- [x] **P0-A** Implement `rent_delta = new_rent - existing_rent` for replace, `rent_delta = new_rent` for additional; `projected_surplus = baseline_surplus + income_adjustment - added_spending - rent_delta`. **Pass:** pure function tests; no float drift.
+- [x] **P0-A** May 2026 test: baseline `$747.06`; replace `$1,275` rent with `$1,500` → `$522.06`; add `$1,500` rent → `−$752.94`. **Pass:** UI and unit tests match.
+- [x] **P0-B** Display complete formula, baseline rent, rent delta, income adjustment, added spending, projected surplus, and difference from baseline. **Pass:** displayed arithmetic reconstructs output exactly.
+- [x] **P0-B** Show six-month **static extrapolation** (`6 × projected monthly surplus`), not an account balance or statistically validated forecast; label constant-income/expense assumptions. **Pass:** no implied certainty or cash-on-hand claim.
+- [x] **P0-B** Negative surplus warning and warning if selected month contains unknowns/partial coverage; include clear disclaimer that historical month may be atypical. **Pass:** negative May additional-rent scenario flagged.
+- [x] **P1** Optional monthly savings target; compare projected monthly surplus to target without claiming funds are available as bank balance.
+- [x] **P1** Optional six-row cumulative change table relative to a **user-supplied starting balance**, never inferred from statement activity.
+
+**Phase 4 evidence (2026-11-10):** 265 Python tests and 17 JavaScript tests pass; the independent fixture audit and dependency check pass. Fifty Phase 4 cases cover exact formulas and May results, nonfinite/invalid inputs and overflow, effective rent evidence without summing Housing, missing/multiple-rent confirmation, confirmation invalidation after baseline/input changes, negative/unknown/partial warnings, targets, explicit starting values, six-row static tables, and recalculation/restart. Streamlit AppTest verifies rendered controls and handlers; no native-browser walkthrough was performed. See [PHASE4.md](PHASE4.md). Next: Phase 5 quality, privacy, and release.
 
 ## Phase 5 — Quality, privacy, release (3:45–5:00+)
 

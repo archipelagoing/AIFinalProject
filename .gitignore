@@ -218,3 +218,14 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Compass local financial data and browser tooling
+node_modules/
+*.db
+*.sqlite*
+.env.*
+.local/
+private-uploads/
+playwright-report/
+test-results/
+.DS_Store

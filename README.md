@@ -1,4 +1,4 @@
-# compass.
+# compass
 
 > **Repository navigation:** [File guide](REPOSITORY_GUIDE.md) · [96-ticket engineering plan](COMPASS_ENGINEERING_PLAN.md) · [Candidate coverage matrix](COMPASS_COVERAGE_MATRIX.csv) · [Run the existing prototype](#run-the-local-python-foundation) · [Historical release evidence](archive/alpha-0.1/README.md).
 

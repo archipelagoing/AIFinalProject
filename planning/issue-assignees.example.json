@@ -1,0 +1,18 @@
+{
+  "repo": "OWNER/REPOSITORY",
+  "labels": ["type:task", "needs:review"],
+  "milestones": {
+    "CMP-1112-": "Gate 1 — Foundations",
+    "CMP-1114-": "Gate 2 — Vertical Slice",
+    "CMP-1119-": "Gate 3 — Wrapped Alpha",
+    "CMP-1121-": "Gate 4 — End-to-End Beta",
+    "CMP-1126-": "Gate 5 — Release Candidate",
+    "CMP-1128-": "Gate 6 — Robustness Review"
+  },
+  "assignees": {
+    "Dev 1": "github-handle-for-dev-1",
+    "Dev 2": "github-handle-for-dev-2",
+    "Dev 3": "github-handle-for-dev-3",
+    "Dev 4": "github-handle-for-dev-4"
+  }
+}

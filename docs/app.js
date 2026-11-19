@@ -15,6 +15,7 @@ const titles = {
 function notice(message, error = false) {
   $('#notice').textContent = message;
   $('#notice').classList.toggle('error', error);
+  $('#notice').setAttribute('role', error ? 'alert' : 'status');
   $('#notice').hidden = !message;
 }
 function commit(next) {
@@ -131,6 +132,8 @@ function renderAnswer() {
 
 async function loadDemo() {
   const buttons = [$('#demo-button'), $('#load-demo')]; buttons.forEach(b => b.disabled = true);
+  buttons.forEach(b => b.setAttribute('aria-busy', 'true'));
+  notice('Loading fictional demo statements…');
   try {
     const original = state;
     let next = state; let added = 0;
@@ -144,7 +147,7 @@ async function loadDemo() {
     commit(next); selectedMonth = '2026-05'; render();
     notice(added ? `Loaded ${added} fictional transactions. Select a month to explore; original data and corrections stay in this browser.` : 'The fictional statements are already loaded. Existing corrections were kept.');
   } catch (error) { notice(error.message, true); }
-  finally { buttons.forEach(b => b.disabled = false); }
+  finally { buttons.forEach(b => { b.disabled = false; b.removeAttribute('aria-busy'); }); }
 }
 $('#demo-button').onclick = loadDemo; $('#load-demo').onclick = loadDemo;
 function openImport() {
@@ -154,7 +157,10 @@ function openImport() {
 $('#import-button').onclick = openImport; $('#empty-import').onclick = openImport;
 $('#file-input').onchange = async event => {
   const file = event.target.files[0]; if (!file) return;
-  const button = $('#choose-file'); if (button) button.disabled = true;
+  const button = $('#choose-file');
+  if (button) { button.disabled = true; button.setAttribute('aria-busy', 'true'); }
+  const message = $('#import-message');
+  if (message) { message.setAttribute('role', 'status'); message.textContent = 'Importing statement…'; }
   try {
     if (file.size > 5 * 1024 * 1024) throw new Error('Choose a CSV smaller than 5 MB for this browser-storage prototype.');
     const text = new TextDecoder('utf-8', { fatal: true }).decode(await file.arrayBuffer());
@@ -162,8 +168,13 @@ $('#file-input').onchange = async event => {
     const result = await importCSV(original, text, file.name);
     if (state !== original) throw new Error('Workspace changed during this import. Try again; your latest changes were kept.');
     commit(result.state); render(); $('#modal').close(); notice(result.message);
-  } catch (error) { if ($('#import-message')) $('#import-message').textContent = error instanceof TypeError ? 'Could not decode this file as UTF-8. Save it as a UTF-8 CSV and try again.' : error.message; else notice(error.message, true); }
-  finally { event.target.value = ''; if (button) button.disabled = false; }
+  } catch (error) {
+    if (message) {
+      message.setAttribute('role', 'alert');
+      message.textContent = error instanceof TypeError ? 'Could not decode this file as UTF-8. Save it as a UTF-8 CSV and try again.' : error.message;
+    } else notice(error.message, true);
+  }
+  finally { event.target.value = ''; if (button) { button.disabled = false; button.removeAttribute('aria-busy'); } }
 };
 document.addEventListener('click', event => {
   const edit = event.target.closest('[data-edit]');

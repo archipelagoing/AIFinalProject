@@ -22,6 +22,24 @@ npm test
 
 Tests cover all 164 reference classifications, six monthly totals, integer cents, malformed and duplicate imports, conflict handling, refund/transfer exclusions, corrections, saved-state reopening/deletion, five question intents, and the exact May scenarios. Test oracles stay outside `docs/` and are never inputs to production calculations.
 
+## Design system and contrast
+
+The interface uses the semantic `--compass-*` color tokens, `--font-body` / `--font-display` typography tokens, `--space-*` spacing scale, and `--radius-*` shape tokens in `styles.css`. Light and dark palettes follow the user's `prefers-color-scheme`; reduced-motion preferences disable transitions and entrance animation. Navigation, form fields, and common action controls have a 44px minimum target height and a visible, 3px keyboard focus ring. The history chart retains proportional bars and provides each with a named keyboard-operable button.
+
+Contrast was calculated with the WCAG relative-luminance formula. The tested text pairs meet WCAG AA's 4.5:1 minimum for normal text in both themes:
+
+| Pair | Light | Dark |
+| --- | ---: | ---: |
+| Primary text / surface | 15.45:1 | 13.73:1 |
+| Muted text / surface | 7.30:1 | 9.83:1 |
+| Action text / action fill | 7.59:1 | 10.93:1 |
+| Brand text / soft brand fill | 5.37:1 | 6.25:1 |
+| Warning text / warning fill | 7.58:1 | 8.45:1 |
+| Error text / error fill | 6.38:1 | 8.38:1 |
+| Focus ring / canvas | 6.35:1 | 11.18:1 |
+
+The exact pairs are also recorded in [`design-system-contrast.json`](./design-system-contrast.json). The workspace retains a visible notice that statement coverage is unverified; unresolved rows and exclusions remain inspectable. Neither imported totals nor scenarios are presented as bank-balance reconciliation or financial advice.
+
 The published demo, source evidence, category correction/recalculation, reload persistence, rent scenarios, June unresolved warning, and a roughly 520-pixel layout were verified in native Chrome on 2026-11-10. See [BROWSER_QA.md](../archive/alpha-0.1/BROWSER_QA.md) in the source repository. Uploaded-file picker errors, actual confirmed browser deletion, physical-phone testing, and full keyboard/screen-reader coverage remain pending. Passing unit tests is not evidence that these remaining checks passed.
 
 ## Deploy from the main repository

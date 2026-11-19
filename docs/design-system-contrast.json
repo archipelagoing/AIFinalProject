@@ -1,0 +1,25 @@
+{
+  "standard": "WCAG 2.2 AA",
+  "method": "Relative luminance contrast ratio",
+  "normalTextMinimum": 4.5,
+  "results": {
+    "light": {
+      "primaryTextOnSurface": { "foreground": "#18231c", "background": "#fff9ed", "ratio": 15.45 },
+      "mutedTextOnSurface": { "foreground": "#43584d", "background": "#fff9ed", "ratio": 7.30 },
+      "actionTextOnAction": { "foreground": "#fff9ed", "background": "#315942", "ratio": 7.59 },
+      "brandTextOnSoftBrand": { "foreground": "#315942", "background": "#c9d9bf", "ratio": 5.37 },
+      "warningTextOnWarningSurface": { "foreground": "#604915", "background": "#fff1c7", "ratio": 7.58 },
+      "errorTextOnErrorSurface": { "foreground": "#87352e", "background": "#f5dfda", "ratio": 6.38 },
+      "focusRingOnCanvas": { "foreground": "#315942", "background": "#e7e6dc", "ratio": 6.35 }
+    },
+    "dark": {
+      "primaryTextOnSurface": { "foreground": "#f4f0e6", "background": "#1b261f", "ratio": 13.73 },
+      "mutedTextOnSurface": { "foreground": "#c4d0c8", "background": "#1b261f", "ratio": 9.83 },
+      "actionTextOnAction": { "foreground": "#18231c", "background": "#c9d9bf", "ratio": 10.93 },
+      "brandTextOnSoftBrand": { "foreground": "#c9d9bf", "background": "#334d3c", "ratio": 6.25 },
+      "warningTextOnWarningSurface": { "foreground": "#ffde8a", "background": "#493a18", "ratio": 8.45 },
+      "errorTextOnErrorSurface": { "foreground": "#ffc0b7", "background": "#4a2725", "ratio": 8.38 },
+      "focusRingOnCanvas": { "foreground": "#f2c65d", "background": "#111813", "ratio": 11.18 }
+    }
+  }
+}

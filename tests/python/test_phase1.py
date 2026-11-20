@@ -13,7 +13,7 @@ from compass import db
 from compass.analytics import summarize_month
 from compass.classification import classify
 from compass.contracts import TransactionType
-from compass.importer import import_statement
+from compass.importer import import_statement, preview_statement
 
 ROOT = Path(__file__).resolve().parents[2]
 CHECKING = (ROOT / "fixtures/synthetic_checking_2026_Jan-Jun.csv").read_bytes()
@@ -33,6 +33,27 @@ def connection():
 
 def counts(conn):
     return tuple(conn.execute(f"SELECT count(*) FROM {table}").fetchone()[0] for table in ("imports", "transactions"))
+
+
+def test_preview_keeps_original_fields_row_identity_and_invalid_rows_visible(connection):
+    data = statement(
+        '2026-05-01,"ALDI, DOWNTOWN",-12.34,Checking,source-7',
+        "2026-05-02,UNKNOWN,,Checking,source-8",
+        "2026-05-03,COFFEE,-4.25,Checking,source-9",
+    )
+    preview = preview_statement(data, source_namespace="demo")
+    assert (preview.total_rows, preview.valid_rows, preview.invalid_rows, preview.rejected_rows) == (3, 2, 1, 3)
+    assert [row.source_row_number for row in preview.rows] == [2, 4]
+    first = preview.rows[0]
+    assert first.source_transaction_id == "source-7"
+    assert first.description == "ALDI, DOWNTOWN"
+    assert first.amount_cents == -1234
+    assert first.original_row == {
+        "date": "2026-05-01", "description": "ALDI, DOWNTOWN", "amount": "-12.34",
+        "account": "Checking", "transaction_id": "source-7",
+    }
+    assert preview.issues[0].row_number == 3
+    assert counts(connection) == (0, 0)  # Preview has no persistence side effects.
 
 
 def test_checking_vertical_slice_and_provenance(connection):

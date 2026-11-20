@@ -52,6 +52,65 @@ class ImportResult:
         return self.total_rows if self.issues else 0
 
 
+@dataclass(frozen=True, slots=True)
+class ImportPreviewRow:
+    """A staged row view; original fields and source row identity stay intact."""
+
+    source_row_number: int
+    source_transaction_id: str | None
+    posted_date: str
+    description: str
+    account: str
+    amount_cents: int
+    original_row: dict[str, str]
+
+
+@dataclass(frozen=True, slots=True)
+class ImportPreview:
+    total_rows: int
+    rows: tuple[ImportPreviewRow, ...]
+    issues: tuple[ImportIssue, ...]
+
+    @property
+    def valid_rows(self) -> int:
+        return len(self.rows)
+
+    @property
+    def invalid_rows(self) -> int:
+        return sum(issue.row_number is not None and issue.row_number > 1 for issue in self.issues)
+
+    @property
+    def rejected_rows(self) -> int:
+        """A file with any issue is rejected atomically, including valid rows."""
+        return self.total_rows if self.issues else 0
+
+
+def preview_statement(data: bytes, *, source_namespace: str = "preview",
+                      mapping: ColumnMapping | None = None) -> ImportPreview:
+    """Validate and stage a statement without writing to SQLite.
+
+    The preview is deliberately not a partial-import API: callers must treat
+    any issue as a rejection of the whole statement. Row ordinals and original
+    source fields are returned so the UI can show exactly what was interpreted.
+    """
+    transactions, issues, total_rows = _parse(data, source_namespace, mapping)
+    selected_mapping = mapping or CANONICAL_MAPPING
+    return ImportPreview(
+        total_rows=total_rows,
+        rows=tuple(ImportPreviewRow(
+            source_row_number=row.source_row_number,
+            source_transaction_id=row.source_transaction_id,
+            posted_date=row.posted_date,
+            description=row.description,
+            account=(row.original_row[selected_mapping.account_column].strip()
+                     if selected_mapping.account_column else selected_mapping.fixed_account.strip()),
+            amount_cents=row.amount_cents,
+            original_row=row.original_row,
+        ) for row in transactions),
+        issues=tuple(issues),
+    )
+
+
 def read_headers(data: bytes) -> list[str]:
     if len(data) > MAX_FILE_BYTES:
         raise ValueError("Choose a CSV no larger than 5 MB.")

@@ -1,0 +1,32 @@
+{
+  "ticket": "CMP-1112-D4-02",
+  "verification": {
+    "command": "python3 -m pytest -q",
+    "result": "passed",
+    "passed": 273
+  },
+  "fixtures": [
+    {
+      "Statement": "synthetic_checking_2026_Jan-Jun.csv",
+      "Transactions": 158,
+      "Data": "Fictional"
+    },
+    {
+      "Statement": "synthetic_savings_2026_Jan-Jun.csv",
+      "Transactions": 6,
+      "Data": "Fictional"
+    }
+  ],
+  "navigation": [
+    "Home",
+    "Import",
+    "Transactions"
+  ],
+  "safeguards": [
+    "explicit amount direction",
+    "atomic imports",
+    "raw source rows retained",
+    "stable source row identity",
+    "non-persisting row-by-row import preview"
+  ]
+}

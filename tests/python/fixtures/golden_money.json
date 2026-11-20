@@ -1,0 +1,104 @@
+{
+  "description": "Golden cases for compass/money.py (CMP-1112-D2-02). Expected values are worked out by hand, not copied from code output. Amounts are signed integer cents: money out is negative.",
+  "fixtures": {
+    "october": [
+      {"id": "T1", "posted_date": "2026-10-03", "kind": "purchase", "amount_cents": -575,   "currency": "USD"},
+      {"id": "T2", "posted_date": "2026-10-10", "kind": "purchase", "amount_cents": -625,   "currency": "USD"},
+      {"id": "T3", "posted_date": "2026-10-15", "kind": "purchase", "amount_cents": -4000,  "currency": "USD"},
+      {"id": "T4", "posted_date": "2026-10-20", "kind": "refund",   "amount_cents": 1500,   "currency": "USD"},
+      {"id": "T5", "posted_date": "2026-10-25", "kind": "transfer", "amount_cents": -20000, "currency": "USD"},
+      {"id": "T6", "posted_date": "2026-10-31", "kind": "income",   "amount_cents": 200000, "currency": "USD"},
+      {"id": "T7", "posted_date": "2026-11-04", "kind": "purchase", "amount_cents": -600,   "currency": "USD"}
+    ]
+  },
+  "cases": [
+    {
+      "id": 1,
+      "name": "parse a simple negative amount",
+      "op": "parse_amount",
+      "input": {"text": "-5.75"},
+      "expected": -575
+    },
+    {
+      "id": 2,
+      "name": "no float drift: 0.10 + 0.20",
+      "op": "parse_sum",
+      "input": {"texts": ["-0.10", "-0.20"]},
+      "expected": -30,
+      "note": "float math gives -0.30000000000000004"
+    },
+    {
+      "id": 3,
+      "name": "reject more than 2 decimals",
+      "op": "parse_amount",
+      "input": {"text": "1.005"},
+      "expected_error": "ValueError"
+    },
+    {
+      "id": 4,
+      "name": "refund nets against purchase",
+      "op": "spending",
+      "input": {"fixture": "october", "txn_ids": ["T3", "T4"]},
+      "expected": 2500
+    },
+    {
+      "id": 5,
+      "name": "refund with no purchase in the period is a net refund",
+      "op": "spending",
+      "input": {"txns": [
+        {"id": "R1", "posted_date": "2026-12-05", "kind": "refund", "amount_cents": 1500, "currency": "USD"}
+      ]},
+      "expected": -1500,
+      "expected_label": "net refund $15.00"
+    },
+    {
+      "id": 6,
+      "name": "October spending excludes transfer and income",
+      "op": "spending",
+      "input": {"fixture": "october", "period": ["2026-10-01", "2026-11-01"]},
+      "expected": 3700,
+      "expected_label": "$37.00 spent",
+      "expected_excluded": ["T5", "T6"]
+    },
+    {
+      "id": 7,
+      "name": "October net recorded cash flow",
+      "op": "net_cash_flow",
+      "input": {"fixture": "october", "period": ["2026-10-01", "2026-11-01"]},
+      "expected": 196300,
+      "note": "200000 income - 3700 spending; transfer excluded"
+    },
+    {
+      "id": 8,
+      "name": "period end date is exclusive",
+      "op": "period_filter",
+      "input": {
+        "period": ["2026-10-01", "2026-11-01"],
+        "txns": [
+          {"id": "A", "posted_date": "2026-10-31", "kind": "purchase", "amount_cents": -100, "currency": "USD"},
+          {"id": "B", "posted_date": "2026-11-01", "kind": "purchase", "amount_cents": -200, "currency": "USD"},
+          {"id": "T7", "posted_date": "2026-11-04", "kind": "purchase", "amount_cents": -600, "currency": "USD"}
+        ]
+      },
+      "expected": ["A"]
+    },
+    {
+      "id": 9,
+      "name": "never add across currencies",
+      "op": "spending_by_currency",
+      "input": {"txns": [
+        {"id": "U1", "posted_date": "2026-10-05", "kind": "purchase", "amount_cents": -1000, "currency": "USD"},
+        {"id": "E1", "posted_date": "2026-10-06", "kind": "purchase", "amount_cents": -500,  "currency": "EUR"}
+      ]},
+      "expected": {"USD": 1000, "EUR": 500},
+      "expected_mixed_currency": true
+    },
+    {
+      "id": 10,
+      "name": "empty average and zero baseline return null",
+      "op": "empty_and_zero",
+      "input": {"average": {"total": 0, "n": 0}, "pct_change": {"old": 0, "new": 3000}},
+      "expected": {"average": null, "pct_change": null}
+    }
+  ]
+}

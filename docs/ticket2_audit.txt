@@ -1,0 +1,8 @@
+Fictional fixture audit: PASS
+164 transactions; accounts: Checking, Savings
+2026-01: income=370000 expenses=227384 surplus=142616 cents
+2026-02: income=370000 expenses=237311 surplus=132689 cents
+2026-03: income=370000 expenses=225909 surplus=144091 cents
+2026-04: income=370000 expenses=223912 surplus=146088 cents
+2026-05: income=370000 expenses=295294 surplus=74706 cents
+2026-06: income=370000 expenses=221481 surplus=171145 cents

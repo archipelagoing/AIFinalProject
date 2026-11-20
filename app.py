@@ -240,6 +240,7 @@ def show_questions(transactions, imports: dict, selected_month: str) -> None:
     st.divider()
     st.subheader("Ask Compass")
     st.caption("Ask one question for one imported month. Without a month, the selected snapshot month is used. All imported accounts are included. Answers recalculate from current classifications on every rerun.")
+    tone = st.selectbox("Response tone", ["Clear", "Warm", "Direct"], key="ask_tone")
     with st.expander("Supported questions"):
         for example in questions.EXAMPLES:
             st.write(example)
@@ -255,39 +256,56 @@ def show_questions(transactions, imports: dict, selected_month: str) -> None:
     if submitted:
         # Persist the question, never a cached monetary answer or a model result.
         st.session_state["asked_question"] = question
-        try:
-            _, status = ollama.route(question, transactions, selected_month, model=model,
-                                     enabled=enabled, local_only_confirmed=confirmed)
-            st.session_state["routing_status"] = status
-        except ValueError:
-            st.session_state["routing_status"] = "Clarification needed"
+        with st.status("Checking the local calculation route…", expanded=False) as progress:
+            try:
+                _, status = ollama.route(question, transactions, selected_month, model=model,
+                                         enabled=enabled, local_only_confirmed=confirmed)
+                st.session_state["routing_status"] = status
+                progress.update(label="Local route checked", state="complete")
+            except ValueError:
+                st.session_state["routing_status"] = "Clarification needed"
+                progress.update(label="Local route needs clarification", state="error")
     if "asked_question" not in st.session_state:
+        st.info("No question yet. Choose an example or ask about supported data.")
         return
-    st.write("Question: " + st.session_state["asked_question"])
+    with st.chat_message("user"):
+        st.write(st.session_state["asked_question"])
+    with st.chat_message("assistant"):
+        route_label = st.session_state.get("routing_status", "Deterministic routing")
+        st.caption(("Local AI router · " if enabled and confirmed else "Local AI router off · ") + route_label)
     try:
         request = questions.parse_question(st.session_state["asked_question"], transactions, selected_month)
         answer = questions.execute(transactions, request)
     except ValueError as error:
-        st.warning(str(error))
-        st.info("Examples: " + " · ".join(questions.EXAMPLES))
+        with st.chat_message("assistant"):
+            st.warning(str(error))
+            st.info("Try a supported question: " + " · ".join(questions.EXAMPLES))
         return
-    st.caption(st.session_state.get("routing_status", "Deterministic routing") + "; current filters independently validated on this rerun.")
-    st.metric("Ask Compass result", format_money(answer.amount_cents))
+    with st.chat_message("assistant"):
+        introductions = {
+            "Clear": "Calculated from the selected source rows.",
+            "Warm": "Here’s what the selected source rows show.",
+            "Direct": "Source row calculation:",
+        }
+        st.caption(introductions[tone] + " Exact values come from deterministic tools.")
+        st.metric("Ask Compass result", format_money(answer.amount_cents))
     filters = f"Tool: {request.tool}; month: {request.month}; accounts: all imported accounts"
     if request.category is not None:
         filters += f"; category: {request.category}"
     if request.tool == "get_largest_expenses":
         filters += f"; requested count: {request.limit}; returned: {len(answer.included_rows)}; ties: amount, date, local record ID"
-    st.write(filters)
-    st.write(f"Query period (inclusive): {answer.start_date} through {answer.end_date}. Covered activity: {answer.covered_start} through {answer.covered_end}.")
-    st.write(f"{answer.formula} = {format_money(answer.amount_cents)}. Included rows: {len(answer.included_rows)}.")
-    st.warning("Full statement coverage is unverified; this month may be incomplete. Classified totals are not bank-balance reconciled. Surplus is not available cash.")
-    show_quality(analytics.summarize_month(transactions, request.month))
-    with st.expander("Answer evidence — included source rows", expanded=True):
-        st.dataframe(evidence_rows(answer.included_rows, imports), hide_index=True)
-    with st.expander("Answer evidence — month-wide excluded transfers and unknowns"):
-        st.caption("These month-wide exclusions are separate from category/count filters. Unknowns never enter verified totals; transfers never enter income or expenses.")
-        st.dataframe(evidence_rows(answer.excluded_rows, imports), hide_index=True)
+    with st.chat_message("assistant"):
+        st.write(filters)
+        st.write(f"Query period (inclusive): {answer.start_date} through {answer.end_date}. Covered activity: {answer.covered_start} through {answer.covered_end}.")
+        st.write(f"{answer.formula} = {format_money(answer.amount_cents)}. Included rows: {len(answer.included_rows)}.")
+        st.warning("Full statement coverage is unverified; this month may be incomplete. Classified totals are not bank-balance reconciled. Surplus is not available cash.")
+        show_quality(analytics.summarize_month(transactions, request.month))
+        st.caption(f"Evidence chip · {len(answer.included_rows)} included source rows")
+        with st.expander("Answer evidence — included source rows", expanded=True):
+            st.dataframe(evidence_rows(answer.included_rows, imports), hide_index=True)
+        with st.expander("Answer evidence — month-wide excluded transfers and unknowns"):
+            st.caption("These month-wide exclusions are separate from category/count filters. Unknowns never enter verified totals; transfers never enter income or expenses.")
+            st.dataframe(evidence_rows(answer.excluded_rows, imports), hide_index=True)
 
 
 def show_review(connection: sqlite3.Connection, summary: analytics.MonthSummary) -> None:

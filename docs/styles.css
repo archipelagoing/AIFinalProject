@@ -153,6 +153,34 @@ button:disabled { opacity: 1; cursor: progress; }
 .donut::before { background: var(--compass-surface); }
 .spend-row i { outline: 1px solid var(--compass-ink); outline-offset: 1px; }
 
+/* Conversational shell: presentation never supplies or alters a calculation. */
+.chat-heading { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; margin-bottom:10px; }
+.chat-heading .eyebrow { margin-bottom:8px; }
+.local-ai-badge { display:inline-flex; align-items:center; gap:5px; border:1px solid var(--compass-border); border-radius:999px; padding:7px 10px; color:var(--compass-brand); background:var(--compass-brand-soft); font-size:10px; font-weight:600; }
+.tone-control { display:flex; flex-direction:row; align-items:center; justify-content:flex-end; gap:10px; margin:16px 0; color:var(--compass-muted); font-size:11px; }
+.tone-control select { min-width:120px; }
+.chat-empty { margin:16px 0; padding:14px 16px; border:1px dashed var(--compass-border); border-radius:var(--radius-card); color:var(--compass-muted); background:var(--compass-surface-soft); font-size:12px; line-height:1.65; }
+.chat-thread { display:grid; gap:12px; margin-top:14px; }
+.chat-message { max-width:min(88%, 760px); padding:16px 18px; border:1px solid var(--compass-border); border-radius:14px; background:var(--compass-surface); line-height:1.65; }
+.chat-message p { margin:8px 0; }
+.user-message { justify-self:end; border-bottom-right-radius:4px; background:var(--compass-brand-soft); }
+.assistant-message { justify-self:start; border-bottom-left-radius:4px; }
+.message-label { display:flex; align-items:center; gap:8px; color:var(--compass-muted); font-size:10px; font-weight:650; letter-spacing:.03em; }
+.message-label .local-ai-badge { font-size:9px; padding:4px 7px; }
+.answer-value { margin:10px 0; color:var(--compass-ink); font-size:clamp(26px, 5vw, 38px); font-variant-numeric:tabular-nums; }
+.evidence-chip-label { display:inline-block; margin:8px 8px 0 0; color:var(--compass-muted); font-size:10px; }
+.chat-message .evidence { margin-top:8px; }
+.chat-message .evidence summary { width:max-content; max-width:100%; padding:5px 10px; border:1px solid var(--compass-border); border-radius:999px; background:var(--compass-surface-soft); color:var(--compass-brand); font-size:10px; }
+.chat-error { color:var(--compass-danger); background:var(--compass-danger-surface); }
+.chat-loading::after { content:""; display:inline-block; width:5px; height:5px; margin-left:8px; border-radius:50%; background:currentColor; animation:chat-pulse 1s infinite alternate; }
+@keyframes chat-pulse { to { opacity:.25; } }
+@media (max-width:600px) {
+  .chat-heading { flex-direction:column; }
+  .tone-control { justify-content:space-between; }
+  .chat-message { max-width:100%; width:100%; padding:14px; }
+}
+@media (prefers-reduced-motion:reduce) { .chat-loading::after { animation:none; } }
+
 @media (prefers-color-scheme: dark) {
   :root {
     color-scheme: dark;

@@ -178,3 +178,27 @@ def test_failed_deletion_reports_error_and_preserves_rows(monkeypatch, tmp_path)
     conn = db.connect(path)
     assert counts(conn) == (164, 2, 2)
     conn.close()
+
+
+def test_streamlit_chat_tone_preserves_deterministic_answer_and_local_router_state(monkeypatch, tmp_path):
+    from streamlit.testing.v1 import AppTest
+
+    path = tmp_path / "chat-tone.db"
+    monkeypatch.setenv("COMPASS_DB_PATH", str(path))
+    connection = db.connect(path)
+    load(connection)
+    connection.close()
+
+    app = AppTest.from_file(str(ROOT / "app.py")).run(timeout=30)
+    app.text_input(key="ask_input").input("surplus in May 2026")
+    next(button for button in app.button if button.label == "Ask Compass").click().run(timeout=30)
+    assert not app.exception and not app.error
+    amount = next(item.value for item in app.metric if item.label == "Ask Compass result")
+    assert amount == "$747.06"
+    assert any("Local AI router off" in item.value for item in app.caption)
+
+    app.selectbox(key="ask_tone").select("Warm").run(timeout=30)
+    assert not app.exception and not app.error
+    assert next(item.value for item in app.metric if item.label == "Ask Compass result") == amount
+    assert any("Here’s what the selected source rows show" in item.value for item in app.caption)
+    assert any("coverage is unverified" in item.value for item in app.warning)

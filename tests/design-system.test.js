@@ -6,7 +6,7 @@ const css = await readFile(new URL('../docs/styles.css', import.meta.url), 'utf8
 const contrastReport = JSON.parse(await readFile(new URL('../docs/design-system-contrast.json', import.meta.url), 'utf8'));
 
 function tokensFrom(block) {
-  return Object.fromEntries([...block.matchAll(/--(compass-[\w-]+):\s*(#[\da-f]{6})/gi)].map(([, name, value]) => [name, value]));
+  return Object.fromEntries([...block.matchAll(/--(compass-[\w-]+):\s*(#[\da-f]{6})/gi)].map(([, name, value]) => [`--${name}`, value]));
 }
 
 function contrast(foreground, background) {
@@ -58,4 +58,20 @@ test('design system honors reduced-motion preference and documents coverage limi
   const html = await readFile(new URL('../docs/index.html', import.meta.url), 'utf8');
   assert.match(html, /Statement coverage is not verified/);
   assert.match(html, /not a bank-balance reconciliation/);
+});
+
+test('chat shell exposes tone, local routing, empty/loading/error and evidence states', async () => {
+  const html = await readFile(new URL('../docs/index.html', import.meta.url), 'utf8');
+  const js = await readFile(new URL('../docs/app.js', import.meta.url), 'utf8');
+  assert.match(html, /id="chat-tone"/);
+  assert.match(html, /id="chat-local-badge"/);
+  assert.match(html, /id="chat-empty"/);
+  assert.match(html, /id="answer" class="chat-thread" aria-live="polite"/);
+  assert.match(js, /answerState === 'loading'/);
+  assert.match(js, /role="alert"/);
+  assert.match(js, /Local AI off · deterministic/);
+  assert.match(js, /Source rows · \$\{result\.rows\.length\}/);
+  assert.match(css, /\.user-message/);
+  assert.match(css, /\.assistant-message/);
+  assert.match(css, /@media \(max-width:600px\)[\s\S]*\.chat-message/);
 });

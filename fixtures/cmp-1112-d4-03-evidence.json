@@ -1,0 +1,33 @@
+{
+  "ticket": "CMP-1112-D4-03",
+  "verification": [
+    {
+      "command": "npm test",
+      "result": "passed",
+      "passed": 20,
+      "failed": 0
+    },
+    {
+      "command": "python3 -m pytest -q",
+      "result": "passed",
+      "passed": 274,
+      "failed": 0
+    }
+  ],
+  "chat_states": [
+    "empty prompt and no-data state",
+    "loading state",
+    "unsupported-question error with supported examples",
+    "partial-coverage and unresolved-row warning",
+    "calculated answer with formula and source-row evidence"
+  ],
+  "presentation": [
+    "user and assistant message treatments",
+    "local AI routing status is explicit; browser mode accurately identifies deterministic calculations",
+    "clear, warm, and direct tones alter only fixed narrative text",
+    "evidence summaries expose included and excluded source-row counts",
+    "small-screen and reduced-motion styles"
+  ],
+  "calculation_contract": "Displayed amounts and formulas come from existing deterministic tools; no model-generated amounts or financial recommendations are presented.",
+  "api_contract": "Optional Streamlit routing uses the existing loopback-only Ollama adapter for intent routing; deterministic tools validate and calculate all monetary answers."
+}

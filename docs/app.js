@@ -3,7 +3,7 @@ import { loadState, saveState, clearState } from './storage.js';
 
 const $ = selector => document.querySelector(selector);
 const escape = value => String(value).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-let state = emptyState(), selectedMonth = '', currentAnswer = null, scenarioInputs = null, storageProblem = '';
+let state = emptyState(), selectedMonth = '', currentAnswer = null, scenarioInputs = null, storageProblem = '', answerState = 'idle';
 try { state = loadState(localStorage); } catch { storageProblem = 'Saved data could not be opened. Storage may be blocked or the saved format may be invalid. Clear saved data to reset it; no saved records were overwritten.'; }
 const colors = ['#315942', '#5f8f68', '#b86b45', '#c79a35', '#aeb7b2', '#c9d9bf'];
 const titles = {
@@ -15,6 +15,7 @@ const titles = {
 function notice(message, error = false) {
   $('#notice').textContent = message;
   $('#notice').classList.toggle('error', error);
+  $('#notice').setAttribute('role', error ? 'alert' : 'status');
   $('#notice').hidden = !message;
 }
 function commit(next) {
@@ -54,8 +55,17 @@ function render() {
   $('#page-label').textContent = ({ overview: 'Overview', transactions: 'Transactions', ask: 'Ask Compass', whatif: 'What If?' })[page];
   $('#heading').textContent = titles[page][0]; $('#subtitle').textContent = titles[page][1];
   document.querySelectorAll('.view').forEach(v => { v.hidden = v.id !== `view-${page}`; });
-  $('#empty').hidden = available.length > 0; $('#workspace').hidden = !available.length;
-  if (!available.length) return;
+  $('#empty').hidden = available.length > 0 || page === 'ask';
+  $('#workspace').hidden = !available.length && page !== 'ask';
+  if (!available.length) {
+    if (page === 'ask') {
+      $('#chat-empty').hidden = false;
+      $('#chat-empty').textContent = 'No statement data is loaded yet. Import a CSV or load the fictional demo to ask a question.';
+      $('#answer').innerHTML = '';
+    }
+    return;
+  }
+  $('#chat-local-badge').textContent = '⌂ Local AI off · deterministic';
   const summary = summarize(state.transactions, selectedMonth);
   const allDemo = state.imports.every(i => i.fictional_demo === true);
   $('#dataset-label').textContent = allDemo ? 'Fictional demo data' : 'Imported statement data';
@@ -122,15 +132,29 @@ function renderScenario(summary) {
   } catch (error) { node.innerHTML = `<section class="card"><h2>Confirm your assumptions</h2><p class="modal-message" role="alert">${escape(error.message)}</p></section>`; }
 }
 function renderAnswer() {
-  if (!currentAnswer) return;
+  const node = $('#answer');
+  if (!currentAnswer) { $('#chat-empty').hidden = false; node.innerHTML = ''; return; }
+  $('#chat-empty').hidden = true;
+  const tone = $('#chat-tone').value;
+  const userBubble = `<article class="chat-message user-message"><span class="message-label">You</span><p>${escape(currentAnswer.question)}</p></article>`;
+  if (answerState === 'loading') {
+    node.innerHTML = `${userBubble}<article class="chat-message assistant-message" aria-busy="true"><span class="message-label">Compass <span class="local-ai-badge">⌂ Local</span></span><p class="chat-loading">Checking supported calculations and source rows…</p></article>`;
+    return;
+  }
   try {
     const result = askQuestion(state.transactions, currentAnswer.question, currentAnswer.month);
-    $('#answer').innerHTML = `<section class="card answer-card"><p class="eyebrow">${escape(monthName(result.month))} · CALCULATED FROM SOURCE ROWS</p><h2>${escape(currentAnswer.question)}</h2><div class="answer-value">${money(result.amount)}</div><p class="small muted">${escape(result.calculation)} = ${money(result.amount)}</p><p class="small muted">Filters: ${escape(result.month)}; classified transaction types only. Transfers and unknowns are excluded.</p>${warnings(result.summary)}${evidence(result.summary, result.rows, 'Inspect answer evidence')}</section>`;
-  } catch (error) { $('#answer').innerHTML = `<section class="notice error" role="alert">${escape(error.message)}</section>`; }
+    const intros = { clear: 'Calculated from the selected source rows.', warm: 'Here’s what the selected source rows show.', direct: 'Source row calculation:' };
+    node.innerHTML = `${userBubble}<article class="chat-message assistant-message"><span class="message-label">Compass <span class="local-ai-badge">⌂ Local calculation</span></span><p>${intros[tone]}</p><div class="answer-value">${money(result.amount)}</div><p class="small muted">${escape(result.calculation)} = ${money(result.amount)}</p><p class="small muted">Filters: ${escape(result.month)}; classified transaction types only. Transfers and unknowns are excluded.</p><span class="evidence-chip-label">Coverage and evidence</span>${warnings(result.summary)}${evidence(result.summary, result.rows, `Source rows · ${result.rows.length}`)}</article>`;
+    $('#chat-local-badge').textContent = '⌂ Local AI off · deterministic';
+  } catch (error) {
+    node.innerHTML = `${userBubble}<article class="chat-message assistant-message chat-error" role="alert"><span class="message-label">Compass</span><p>${escape(error.message)}</p><p class="small">Try one of the supported examples below. No amount was estimated.</p></article>`;
+  }
 }
 
 async function loadDemo() {
   const buttons = [$('#demo-button'), $('#load-demo')]; buttons.forEach(b => b.disabled = true);
+  buttons.forEach(b => b.setAttribute('aria-busy', 'true'));
+  notice('Loading fictional demo statements…');
   try {
     const original = state;
     let next = state; let added = 0;
@@ -144,7 +168,7 @@ async function loadDemo() {
     commit(next); selectedMonth = '2026-05'; render();
     notice(added ? `Loaded ${added} fictional transactions. Select a month to explore; original data and corrections stay in this browser.` : 'The fictional statements are already loaded. Existing corrections were kept.');
   } catch (error) { notice(error.message, true); }
-  finally { buttons.forEach(b => b.disabled = false); }
+  finally { buttons.forEach(b => { b.disabled = false; b.removeAttribute('aria-busy'); }); }
 }
 $('#demo-button').onclick = loadDemo; $('#load-demo').onclick = loadDemo;
 function openImport() {
@@ -154,7 +178,10 @@ function openImport() {
 $('#import-button').onclick = openImport; $('#empty-import').onclick = openImport;
 $('#file-input').onchange = async event => {
   const file = event.target.files[0]; if (!file) return;
-  const button = $('#choose-file'); if (button) button.disabled = true;
+  const button = $('#choose-file');
+  if (button) { button.disabled = true; button.setAttribute('aria-busy', 'true'); }
+  const message = $('#import-message');
+  if (message) { message.setAttribute('role', 'status'); message.textContent = 'Importing statement…'; }
   try {
     if (file.size > 5 * 1024 * 1024) throw new Error('Choose a CSV smaller than 5 MB for this browser-storage prototype.');
     const text = new TextDecoder('utf-8', { fatal: true }).decode(await file.arrayBuffer());
@@ -162,8 +189,13 @@ $('#file-input').onchange = async event => {
     const result = await importCSV(original, text, file.name);
     if (state !== original) throw new Error('Workspace changed during this import. Try again; your latest changes were kept.');
     commit(result.state); render(); $('#modal').close(); notice(result.message);
-  } catch (error) { if ($('#import-message')) $('#import-message').textContent = error instanceof TypeError ? 'Could not decode this file as UTF-8. Save it as a UTF-8 CSV and try again.' : error.message; else notice(error.message, true); }
-  finally { event.target.value = ''; if (button) button.disabled = false; }
+  } catch (error) {
+    if (message) {
+      message.setAttribute('role', 'alert');
+      message.textContent = error instanceof TypeError ? 'Could not decode this file as UTF-8. Save it as a UTF-8 CSV and try again.' : error.message;
+    } else notice(error.message, true);
+  }
+  finally { event.target.value = ''; if (button) { button.disabled = false; button.removeAttribute('aria-busy'); } }
 };
 document.addEventListener('click', event => {
   const edit = event.target.closest('[data-edit]');
@@ -192,7 +224,7 @@ function openEdit(id) {
     } catch (error) { $('#edit-message').textContent = error.message; }
   }
 }
-$('#month').onchange = event => { selectedMonth = event.target.value; currentAnswer = null; $('#answer').innerHTML = ''; render(); };
+$('#month').onchange = event => { selectedMonth = event.target.value; currentAnswer = null; answerState = 'idle'; $('#answer').innerHTML = ''; render(); };
 $('#search').oninput = renderTransactions; $('#type-filter').onchange = renderTransactions;
 $('#scenario-form').onsubmit = event => { event.preventDefault(); scenarioInputs = { month: selectedMonth }; renderScenario(summarize(state.transactions, selectedMonth)); };
 $('#scenario-form').addEventListener('input', () => { if (scenarioInputs) renderScenario(summarize(state.transactions, selectedMonth)); });
@@ -200,7 +232,18 @@ $('#scenario-form').addEventListener('change', () => { if (scenarioInputs) rende
 const examples = ['How much did I earn?', 'What were my expenses?', 'How much did I spend on restaurants?', 'What were my five largest expenses?', 'What was my surplus?'];
 $('#examples').innerHTML = examples.map((q, i) => `<button type="button" data-question="${i}">${['Income', 'Expenses', 'Restaurants', 'Largest expenses', 'Surplus'][i]} ↗</button>`).join('');
 $('#examples').onclick = event => { const b = event.target.closest('[data-question]'); if (b) { $('#question').value = examples[Number(b.dataset.question)]; $('#ask-form').requestSubmit(); } };
-$('#ask-form').onsubmit = event => { event.preventDefault(); currentAnswer = { question: $('#question').value, month: selectedMonth }; renderAnswer(); };
+$('#ask-form').onsubmit = async event => {
+  event.preventDefault();
+  currentAnswer = { question: $('#question').value, month: selectedMonth };
+  answerState = 'loading';
+  const submit = $('#ask-submit'); submit.disabled = true; submit.setAttribute('aria-busy', 'true');
+  renderAnswer();
+  await new Promise(resolve => requestAnimationFrame(resolve));
+  answerState = 'complete';
+  renderAnswer();
+  submit.disabled = false; submit.removeAttribute('aria-busy');
+};
+$('#chat-tone').onchange = () => { if (answerState === 'complete' && currentAnswer) renderAnswer(); };
 function showPrivacy() {
   showModal('About your browser workspace', '<p>Compass Alpha is an experimental financial prototype. Use the bundled fictional data for demonstrations. It is not security-audited or a source of financial advice.</p><p>The app downloads static files and optional fictional CSVs from its host. Selected CSV contents, classifications, and calculations stay in browser localStorage. There are no cloud models, analytics, or statement uploads.</p><p>Browser storage is not encrypted by Compass, may be cleared by the browser, and is separate for each browser profile and site origin. Other scripts on the same origin may have access to it. Do not treat it as a secure financial vault.</p><p>There is no opening balance in the demo statements, so surplus is not available cash or an account balance. Month coverage cannot be established from transaction dates alone.</p><p>GitHub Pages replaces the planned Python server. SQLite, Ollama, PDF parsing, automatic bank sync, and arbitrary CSV column mapping are deferred.</p><button class="secondary" id="privacy-clear">Clear Compass data</button>');
   $('#privacy-clear').onclick = confirmClear;

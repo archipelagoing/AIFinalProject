@@ -6,6 +6,7 @@ from pathlib import Path
 import sqlite3
 import sys
 import hashlib
+import json
 
 if sys.version_info < (3, 11):
     raise RuntimeError("Compass requires Python 3.11 or later.")
@@ -239,6 +240,7 @@ def show_questions(transactions, imports: dict, selected_month: str) -> None:
     st.divider()
     st.subheader("Ask Compass")
     st.caption("Ask one question for one imported month. Without a month, the selected snapshot month is used. All imported accounts are included. Answers recalculate from current classifications on every rerun.")
+    tone = st.selectbox("Response tone", ["Clear", "Warm", "Direct"], key="ask_tone")
     with st.expander("Supported questions"):
         for example in questions.EXAMPLES:
             st.write(example)
@@ -254,39 +256,56 @@ def show_questions(transactions, imports: dict, selected_month: str) -> None:
     if submitted:
         # Persist the question, never a cached monetary answer or a model result.
         st.session_state["asked_question"] = question
-        try:
-            _, status = ollama.route(question, transactions, selected_month, model=model,
-                                     enabled=enabled, local_only_confirmed=confirmed)
-            st.session_state["routing_status"] = status
-        except ValueError:
-            st.session_state["routing_status"] = "Clarification needed"
+        with st.status("Checking the local calculation route…", expanded=False) as progress:
+            try:
+                _, status = ollama.route(question, transactions, selected_month, model=model,
+                                         enabled=enabled, local_only_confirmed=confirmed)
+                st.session_state["routing_status"] = status
+                progress.update(label="Local route checked", state="complete")
+            except ValueError:
+                st.session_state["routing_status"] = "Clarification needed"
+                progress.update(label="Local route needs clarification", state="error")
     if "asked_question" not in st.session_state:
+        st.info("No question yet. Choose an example or ask about supported data.")
         return
-    st.write("Question: " + st.session_state["asked_question"])
+    with st.chat_message("user"):
+        st.write(st.session_state["asked_question"])
+    with st.chat_message("assistant"):
+        route_label = st.session_state.get("routing_status", "Deterministic routing")
+        st.caption(("Local AI router · " if enabled and confirmed else "Local AI router off · ") + route_label)
     try:
         request = questions.parse_question(st.session_state["asked_question"], transactions, selected_month)
         answer = questions.execute(transactions, request)
     except ValueError as error:
-        st.warning(str(error))
-        st.info("Examples: " + " · ".join(questions.EXAMPLES))
+        with st.chat_message("assistant"):
+            st.warning(str(error))
+            st.info("Try a supported question: " + " · ".join(questions.EXAMPLES))
         return
-    st.caption(st.session_state.get("routing_status", "Deterministic routing") + "; current filters independently validated on this rerun.")
-    st.metric("Ask Compass result", format_money(answer.amount_cents))
+    with st.chat_message("assistant"):
+        introductions = {
+            "Clear": "Calculated from the selected source rows.",
+            "Warm": "Here’s what the selected source rows show.",
+            "Direct": "Source row calculation:",
+        }
+        st.caption(introductions[tone] + " Exact values come from deterministic tools.")
+        st.metric("Ask Compass result", format_money(answer.amount_cents))
     filters = f"Tool: {request.tool}; month: {request.month}; accounts: all imported accounts"
     if request.category is not None:
         filters += f"; category: {request.category}"
     if request.tool == "get_largest_expenses":
         filters += f"; requested count: {request.limit}; returned: {len(answer.included_rows)}; ties: amount, date, local record ID"
-    st.write(filters)
-    st.write(f"Query period (inclusive): {answer.start_date} through {answer.end_date}. Covered activity: {answer.covered_start} through {answer.covered_end}.")
-    st.write(f"{answer.formula} = {format_money(answer.amount_cents)}. Included rows: {len(answer.included_rows)}.")
-    st.warning("Full statement coverage is unverified; this month may be incomplete. Classified totals are not bank-balance reconciled. Surplus is not available cash.")
-    show_quality(analytics.summarize_month(transactions, request.month))
-    with st.expander("Answer evidence — included source rows", expanded=True):
-        st.dataframe(evidence_rows(answer.included_rows, imports), hide_index=True)
-    with st.expander("Answer evidence — month-wide excluded transfers and unknowns"):
-        st.caption("These month-wide exclusions are separate from category/count filters. Unknowns never enter verified totals; transfers never enter income or expenses.")
-        st.dataframe(evidence_rows(answer.excluded_rows, imports), hide_index=True)
+    with st.chat_message("assistant"):
+        st.write(filters)
+        st.write(f"Query period (inclusive): {answer.start_date} through {answer.end_date}. Covered activity: {answer.covered_start} through {answer.covered_end}.")
+        st.write(f"{answer.formula} = {format_money(answer.amount_cents)}. Included rows: {len(answer.included_rows)}.")
+        st.warning("Full statement coverage is unverified; this month may be incomplete. Classified totals are not bank-balance reconciled. Surplus is not available cash.")
+        show_quality(analytics.summarize_month(transactions, request.month))
+        st.caption(f"Evidence chip · {len(answer.included_rows)} included source rows")
+        with st.expander("Answer evidence — included source rows", expanded=True):
+            st.dataframe(evidence_rows(answer.included_rows, imports), hide_index=True)
+        with st.expander("Answer evidence — month-wide excluded transfers and unknowns"):
+            st.caption("These month-wide exclusions are separate from category/count filters. Unknowns never enter verified totals; transfers never enter income or expenses.")
+            st.dataframe(evidence_rows(answer.excluded_rows, imports), hide_index=True)
 
 
 def show_review(connection: sqlite3.Connection, summary: analytics.MonthSummary) -> None:
@@ -381,33 +400,72 @@ def main() -> None:
     st.warning("All bundled demo statements are fictional. This experimental app is not financial advice.")
     st.caption("CSV files are processed locally and stored in SQLite. No cloud model or API key is required. Use fictional data while evaluating this experimental app.")
     database_path = Path(os.environ.get("COMPASS_DB_PATH", str(ROOT / ".local" / "compass.db")))
+    # Native radio navigation is keyboard operable and adapts to narrow screens.
+    page = st.radio("Workspace", ["Home", "Import", "Transactions"], horizontal=True,
+                    label_visibility="collapsed", key="workspace_route")
     try:
         with closing(db.connect(database_path)) as connection:
             show_privacy_controls(connection)
-            st.subheader("Import a statement")
-            if st.button("Load fictional checking statement", key="load_checking"):
-                data = (ROOT / "fixtures" / importer.DEMO_STATEMENTS[0]).read_bytes()
-                st.session_state["last_import_result"] = importer.import_statement(connection, data, importer.DEMO_STATEMENTS[0], source_namespace="fictional-demo")
-            if st.button("Load fictional savings statement", key="load_savings"):
-                data = (ROOT / "fixtures" / importer.DEMO_STATEMENTS[1]).read_bytes()
-                st.session_state["last_import_result"] = importer.import_statement(connection, data, importer.DEMO_STATEMENTS[1], source_namespace="fictional-demo")
-            # File selection must rerun immediately to enable the submit button.
-            # Putting this uploader inside the form would keep it disabled.
-            upload = st.file_uploader("Statement CSV (UTF-8; up to 5 MB)", type=["csv"], key=f"statement_upload_{st.session_state.get('upload_epoch', 0)}")
-            mapping, ready, context = mapping_controls(upload)
-            file_token = hashlib.sha256(upload.getvalue()).hexdigest() if upload is not None else "empty"
-            with st.form("statement_upload"):
-                namespace = st.text_input("Bank/source identity", value="my-bank", help="Use the same identity for statements from the same bank, and different identities for different banks with similarly named accounts.")
-                st.caption("Required columns: " + ",".join(importer.REQUIRED_COLUMNS) + ". Dates: YYYY-MM-DD. Positive amounts are inflows; negative amounts are outflows.")
-                confirm_distinct = st.checkbox("Keep flagged look-alike rows as distinct activity (only after source verification)", key=f"confirm_distinct_{file_token}_{context}")
-                submitted = st.form_submit_button("Import CSV", disabled=upload is None or not ready)
-            if submitted and upload is not None:
-                st.session_state["last_import_result"] = importer.import_statement(connection, upload.getvalue(), upload.name, source_namespace=namespace, mapping=mapping, confirm_distinct=confirm_distinct)
-            if "last_import_result" in st.session_state:
-                show_import_report(st.session_state["last_import_result"])
+            if page in {"Home", "Import"}:
+                st.subheader("Import a statement")
+                st.caption("Files are processed locally. Unsupported formats are rejected; choose the amount direction and date format explicitly.")
+                if st.button("Load fictional checking statement", key="load_checking"):
+                    data = (ROOT / "fixtures" / importer.DEMO_STATEMENTS[0]).read_bytes()
+                    st.session_state["last_import_result"] = importer.import_statement(connection, data, importer.DEMO_STATEMENTS[0], source_namespace="fictional-demo")
+                if st.button("Load fictional savings statement", key="load_savings"):
+                    data = (ROOT / "fixtures" / importer.DEMO_STATEMENTS[1]).read_bytes()
+                    st.session_state["last_import_result"] = importer.import_statement(connection, data, importer.DEMO_STATEMENTS[1], source_namespace="fictional-demo")
+                # Keep file selection outside the form so it reruns and enables submit.
+                upload = st.file_uploader("Statement CSV (UTF-8; up to 5 MB)", type=["csv"], key=f"statement_upload_{st.session_state.get('upload_epoch', 0)}")
+                mapping, ready, context = mapping_controls(upload)
+                file_token = hashlib.sha256(upload.getvalue()).hexdigest() if upload is not None else "empty"
+                with st.form("statement_upload"):
+                    namespace = st.text_input("Bank/source identity", value="my-bank", help="Use the same identity for statements from the same bank, and different identities for different banks with similarly named accounts.")
+                    st.caption("Required columns: " + ",".join(importer.REQUIRED_COLUMNS) + ". No amount polarity is inferred.")
+                    confirm_distinct = st.checkbox("Keep flagged look-alike rows as distinct activity (only after source verification)", key=f"confirm_distinct_{file_token}_{context}")
+                    submitted = st.form_submit_button("Import CSV", disabled=upload is None or not ready)
+                if submitted and upload is not None:
+                    st.session_state["last_import_result"] = importer.import_statement(connection, upload.getvalue(), upload.name, source_namespace=namespace, mapping=mapping, confirm_distinct=confirm_distinct)
+                if "last_import_result" in st.session_state:
+                    show_import_report(st.session_state["last_import_result"])
+                if upload is not None and (mapping is not None or ready):
+                    preview = importer.preview_statement(upload.getvalue(), source_namespace="preview", mapping=mapping)
+                    st.subheader("Import preview")
+                    st.caption(f"Rows read: {preview.total_rows} · valid: {preview.valid_rows} · invalid: {preview.invalid_rows} · rejected if imported now: {preview.rejected_rows}")
+                    if preview.issues:
+                        st.error("This statement will be rejected atomically because at least one issue was found. No rows will be saved.")
+                        st.dataframe([{"Row": issue.row_number, "CSV line": issue.line_number, "Reason": issue.reason} for issue in preview.issues], hide_index=True)
+                    if preview.rows:
+                        st.dataframe([{
+                            "Source row": row.source_row_number,
+                            "Source ID": row.source_transaction_id or "(not supplied)",
+                            "Date": row.posted_date,
+                            "Description": row.description,
+                            "Account": row.account,
+                            "Interpreted amount (cents)": row.amount_cents,
+                            "Original source fields": json.dumps(row.original_row, ensure_ascii=False, sort_keys=True),
+                        } for row in preview.rows], hide_index=True)
+            elif page == "Transactions":
+                st.subheader("Transaction review")
+                st.caption("Review classifications while original statement fields and row identity remain unchanged.")
             if "review_notice" in st.session_state:
                 st.success(st.session_state.pop("review_notice"))
-            show_snapshot(connection)
+            transactions = db.list_transactions(connection)
+            if page == "Home":
+                show_snapshot(connection)
+            elif page == "Import" and not transactions:
+                st.info("No transactions yet. Load a fictional fixture or choose a supported CSV.")
+            elif page == "Transactions":
+                if not transactions:
+                    st.info("No transactions imported yet. Open Import to load a fictional fixture or choose a supported CSV.")
+                else:
+                    imports = {record["id"]: record for record in db.list_imports(connection)}
+                    months = sorted({row.posted_date[:7] for row in transactions})
+                    month = st.selectbox("Statement month", months, index=months.index("2026-05") if "2026-05" in months else len(months) - 1)
+                    summary = analytics.summarize_month(transactions, month)
+                    st.dataframe(evidence_rows(summary.rows, imports), hide_index=True)
+                    show_quality(summary)
+                    show_review(connection, summary)
     except (OSError, ValueError, sqlite3.Error):
         st.error("Compass could not open or process the local statement workspace. Check database permissions and the fictional fixture files. No financial answer can be shown for a failed operation.")
         return

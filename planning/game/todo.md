@@ -215,6 +215,25 @@ The Gate 1 chat does not need to be visually complete. It needs to demonstrate a
 - [ ] If the parser is assigned, document its schema, allowlist, validation, retry limit, and safe-abstention behavior.
 - [ ] If the wrapped-story specification is assigned, document the seven-card journey, chart encodings, empty states, and interaction choreography.
 
+### D3-04 remaining work
+
+If D3-04 is the **constrained tool-call parser**:
+
+- [x] Document the parser schema and approved-tool allowlist in `model/tool_call_parser.md`.
+- [x] Document the retry policy: no retry by default; use immediate deterministic fallback.
+- [x] Document safe-abstention behavior for malformed, unsupported, or unsafe model output.
+- [ ] Attach the parser test output and baseline evidence to the ticket.
+- [ ] Commit and push the latest parser tests and baseline files.
+- [ ] Obtain cross-owner review and record the acceptance result.
+
+If D3-04 is the **Wrapped story specification** instead:
+
+- [ ] Define the seven-card journey.
+- [ ] Define chart encodings and interaction choreography.
+- [ ] Define loading, empty, error, and incomplete-data states.
+- [ ] Tie every card and displayed metric to a verified source metric.
+- [ ] Obtain storyboard approval and record cross-owner review.
+
 ## 8. Collect completion evidence
 
 - [ ] Save the hardware/model decision.

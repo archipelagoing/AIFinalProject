@@ -67,8 +67,10 @@ def row(question, intent, tool, tone, persona, scenario, *, category=None, limit
 
 def build() -> tuple[list[dict], list[dict]]:
     # Keep scenario groups intact: no scenario appears in both splits.
-    train_scenarios = ["income_total", "expense_total", "category_spending", "largest_expenses", "surplus"]
-    test_scenarios = ["merchant_question", "comparison_question", "clarification_missing_data"]
+    train_scenarios = ["income_total", "expense_total", "category_spending", "clarification_missing_data"]
+    # Hold out both supported and unsupported behavior so baseline tool choice
+    # and safe abstention are measured in the same evaluation.
+    test_scenarios = ["largest_expenses", "surplus", "merchant_question", "comparison_question"]
     train = [examples_for_scenario(scenario, index) for scenario in train_scenarios for index in range(20)]
     test = [examples_for_scenario(scenario, index) for scenario in test_scenarios for index in range(20)]
     # Make each synthetic prompt unique while preserving the same intent and scenario.

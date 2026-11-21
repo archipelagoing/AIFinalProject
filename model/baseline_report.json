@@ -1,0 +1,11 @@
+{
+  "model_id": "Qwen/Qwen3-1.7B",
+  "cases": 80,
+  "tool_match_rate": 0.5,
+  "valid_tool_rate": 1.0,
+  "valid_argument_rate": 0.0,
+  "appropriate_clarification_rate": 0.75,
+  "possible_numeric_invention_count": 0,
+  "mean_latency_seconds": 0.97,
+  "synthetic_data_only": true
+}

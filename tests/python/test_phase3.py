@@ -134,6 +134,37 @@ def route_with_local(rows, **kwargs):
                         model="test:local", local_only_confirmed=True, **kwargs)
 
 
+def test_approved_model_call_is_accepted_but_routing_does_not_execute_tools(connection, monkeypatch):
+    expected = q.Request("get_income", "2026-05")
+    calls = []
+
+    def post(path, payload, deadline):
+        calls.append(path)
+        if path == "/api/show":
+            return {"details": {"format": "gguf"}}
+        return {"done": True, "message": {"content": json.dumps(asdict(expected))}}
+
+    def forbidden_execute(*args, **kwargs):
+        pytest.fail("Routing must not execute a financial tool")
+
+    monkeypatch.setattr(ollama, "_post", post)
+    monkeypatch.setattr(q, "execute", forbidden_execute)
+    request, status = route_with_local(db.list_transactions(connection))
+    assert request == expected and "Local Ollama" in status
+    assert calls == ["/api/show", "/api/chat"]
+
+
+@pytest.mark.parametrize("question", [
+    "How much did I spend at Starbucks in May 2026?",
+    "Did I spend more in May 2026 than April 2026?",
+])
+def test_unsupported_merchant_or_comparison_is_rejected_before_model_call(connection, monkeypatch, question):
+    monkeypatch.setattr(ollama, "_post", lambda *args: pytest.fail("Unsupported request must not contact Ollama"))
+    with pytest.raises(ValueError, match="supported question"):
+        ollama.route(question, db.list_transactions(connection), "2026-05", enabled=True,
+                      model="test:local", local_only_confirmed=True)
+
+
 def test_local_schema_router_has_no_money_or_source_rows_in_prompt(connection, monkeypatch):
     calls = []
     expected = q.Request("get_income", "2026-05")

@@ -119,7 +119,7 @@ Result: model ran successfully but refused the synthetic financial question
 - [x] Label each example with persona and scenario.
 - [x] Label expected intent and approved tool.
 - [x] Label whether evidence is required.
-- [x] Split the examples into training and held-out test sets: 100 train / 60 test.
+- [x] Split the examples into training and held-out test sets: 80 train / 80 test.
 - [x] Verify that no identical examples or scenarios leak between the splits.
 - [x] Keep all examples synthetic; do not use real bank statements or user data.
 
@@ -130,7 +130,7 @@ Generated benchmark files:
 - `model/benchmark_report.json`
 - `model/build_benchmark.py`
 
-Validation report: 160 total examples, 0 duplicate questions, 0 scenario leakage, and all examples marked synthetic.
+Validation report: 160 total examples, 0 duplicate questions, 0 scenario leakage, and all examples marked synthetic. The held-out set includes both supported tool scenarios and unsupported/clarification scenarios so baseline tool selection and safe abstention are both measured.
 
 Example record:
 
@@ -148,15 +148,26 @@ Example record:
 
 ## 4. Establish the baseline model performance
 
-- [ ] Run the original, untrained model against the held-out benchmark.
-- [ ] Record the model response for every test case.
-- [ ] Record whether the tool choice was correct.
-- [ ] Record whether tool arguments were valid.
-- [ ] Check for invented financial numbers.
-- [ ] Record response latency.
-- [ ] Record whether the model correctly refused or requested clarification.
-- [ ] Save the results as JSONL, for example in `evaluation/model/baseline.jsonl`.
-- [ ] Create a reproducible script or notebook for rerunning the baseline.
+- [x] Run the original, untrained model against the held-out benchmark: 80 cases.
+- [x] Record the model response for every test case.
+- [x] Record whether the tool choice was correct.
+- [x] Record whether tool arguments were valid.
+- [x] Check for invented financial numbers: 0 possible numeric inventions.
+- [x] Record response latency: 0.954 seconds mean.
+- [x] Record whether the model correctly refused or requested clarification.
+- [x] Save the results as JSONL in `model/baseline_results (2).jsonl`.
+- [x] Create a reproducible notebook: `model/baseline_evaluation_qwen3_1_7b.ipynb`.
+
+Baseline report (`model/baseline_report (2).json`):
+
+- Tool-match rate: **50%**
+- Valid-tool rate: **100%**
+- Valid-argument rate: **7.5%**
+- Appropriate-clarification rate: **25%**
+- Possible numeric inventions: **0**
+- Mean latency: **0.954 seconds**
+
+Interpretation: the base model can select some approved tools, but it frequently produces invalid arguments and routes unsupported merchant/comparison questions to tools. The runtime must validate and reject these outputs before execution; the model is not safe to dispatch directly.
 
 ## 5. Verify safe tool use
 
@@ -169,6 +180,10 @@ Example record:
 - [ ] Fall back to deterministic parsing when the model fails validation.
 - [ ] Show a clear error or clarification request when safe fallback is not possible.
 - [ ] Confirm that exact numbers come from deterministic Compass functions.
+
+Baseline evidence makes this the next priority: the untrained model selected the correct tool only 50% of the time and produced valid arguments only 7.5% of the time. Do not dispatch its raw output.
+
+Safety test coverage added in `tests/python/test_phase3.py` covers approved calls, unknown/missing/extra arguments, invalid months/categories/limits, malformed JSON, changed filters, unsupported merchant/comparison questions, timeouts, local failures, and the guarantee that routing itself never executes a financial tool. Phase 3 tests pass: **70 passed**. Full Python suite: **275 passed**.
 
 The intended flow is:
 
@@ -196,6 +211,7 @@ The Gate 1 chat does not need to be visually complete. It needs to demonstrate a
 ## 7. Resolve the planning mismatch
 
 - [ ] Confirm with the team whether Dev 3’s fourth Gate 1 task is the wrapped-story specification or the constrained tool-call parser.
+- [ ] **Next recommended implementation:** prioritize the constrained tool-call parser because the baseline model currently produces unsafe/invalid tool outputs.
 - [ ] If the parser is assigned, document its schema, allowlist, validation, retry limit, and safe-abstention behavior.
 - [ ] If the wrapped-story specification is assigned, document the seven-card journey, chart encodings, empty states, and interaction choreography.
 

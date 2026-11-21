@@ -1,0 +1,24 @@
+{
+  "ticket": "CMP-1112-D4-04",
+  "verification": {
+    "command": "python3 -m pytest -q",
+    "result": "passed",
+    "passed": 281,
+    "failed": 0
+  },
+  "router_contract": {
+    "schema": "Draft 2020-12 JSON schema; additional fields rejected",
+    "allowlist": [
+      "get_income",
+      "get_expenses",
+      "get_category_spending",
+      "get_largest_expenses",
+      "get_surplus"
+    ],
+    "model_output": "Must exactly match the independently parsed deterministic request",
+    "max_model_attempts": 2,
+    "overall_deadline_seconds": 4,
+    "network_boundary": "Loopback 127.0.0.1 only; no transaction values or source rows in model prompt"
+  },
+  "safe_failure": "Malformed, duplicate-key, schema-invalid, altered, incomplete, or repeated model output is discarded; only the deterministic parser request can proceed. Monetary tools remain deterministic."
+}

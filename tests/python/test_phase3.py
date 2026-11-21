@@ -153,6 +153,59 @@ def test_local_schema_router_has_no_money_or_source_rows_in_prompt(connection, m
     assert "3700" not in prompt and "PAYROLL" not in prompt and "transaction_id" not in prompt
 
 
+@pytest.mark.parametrize("content", [
+    '{"tool":"get_income","month":"2026-05","category":null,"limit":5,"tool":"get_income"}',
+    '{"tool":"get_income","month":"2026-05","category":null,"limit":NaN}',
+    '{"tool":"execute_sql","month":"2026-05","category":null,"limit":5}',
+    '{"tool":"get_income","month":"2026-05","category":null,"limit":5,"amount":1}',
+    '[{"tool":"get_income"}]',
+])
+def test_strict_model_output_parser_rejects_ambiguous_or_out_of_schema_json(connection, content):
+    expected = q.Request("get_income", "2026-05")
+    with pytest.raises(ollama.InvalidModelOutput):
+        ollama.parse_model_output(content, expected)
+
+
+def test_model_output_schema_error_gets_one_bounded_repair_attempt(connection, monkeypatch):
+    expected = q.Request("get_income", "2026-05")
+    calls = []
+
+    def post(path, payload, deadline):
+        calls.append((path, payload))
+        if path == "/api/show":
+            return {"details": {"format": "gguf"}}
+        attempt = sum(item[0] == "/api/chat" for item in calls)
+        content = "not json" if attempt == 1 else json.dumps(asdict(expected))
+        return {"done": True, "message": {"content": content}}
+
+    monkeypatch.setattr(ollama, "_post", post)
+    request, status = route_with_local(db.list_transactions(connection))
+    assert request == expected and "validated" in status
+    chat_calls = [payload for path, payload in calls if path == "/api/chat"]
+    assert len(chat_calls) == ollama.MAX_MODEL_ATTEMPTS == 2
+    assert chat_calls[1]["messages"][-1]["role"] == "system"
+    assert "not json" not in json.dumps(chat_calls[1]["messages"])
+
+
+def test_repeated_malformed_output_abstains_from_model_intent_after_max_attempts(connection, monkeypatch):
+    calls = []
+
+    def post(path, payload, deadline):
+        calls.append(path)
+        return {"details": {"format": "gguf"}} if path == "/api/show" else {
+            "done": True,
+            "message": {"content": '{"tool":"get_income","month":"2026-05","category":null,"limit":5,"tool":"get_income"}'},
+        }
+
+    monkeypatch.setattr(ollama, "_post", post)
+    request, status = route_with_local(db.list_transactions(connection))
+    assert request == q.Request("get_income", "2026-05")
+    assert "fallback" in status
+    assert calls == ["/api/show", "/api/chat", "/api/chat"]
+    # The safe deterministic parser remains the only path to an executable request.
+    assert q.execute(db.list_transactions(connection), request).amount_cents == 370000
+
+
 @pytest.mark.parametrize("candidate", [
     {"tool": "execute_sql", "month": "2026-05", "category": None, "limit": 5},
     {"tool": "get_income", "month": "2026-06", "category": None, "limit": 5},

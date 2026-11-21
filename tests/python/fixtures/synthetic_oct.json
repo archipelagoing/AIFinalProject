@@ -1,0 +1,42 @@
+{
+  "description": "Synthetic October 2026 fixture for CMP-1112-D2-01, shaped for the repo's compass/db.py schema. Not real bank data.",
+  "_notes": {
+    "why_this_block": "JSON can't hold comments, so explanations live here. compass/seed_synthetic.py ignores this block.",
+    "amounts": "Whole cents, never dollars. -575 means $5.75 spent. 200000 means $2,000.00 received.",
+    "signs": "The repo's database enforces: expense must be negative; income and refund must be positive; transfer can be either.",
+    "types": "Same names as compass.contracts.TransactionType: expense, refund, income, transfer, unknown.",
+    "source_row_number": "Row position in the original CSV, starting at 1 (the database requires > 0). Together with import_id it stops the same row being loaded twice.",
+    "coverage": "covered_end is NOT included: 2026-10-01 to 2026-11-05 means Oct 1 through Nov 4. So November is only partly covered.",
+    "aliases": "'%' means 'anything'. 'STARBUCKS%' matches 'STARBUCKS #1234' and 'STARBUCKS #0987'.",
+    "expected_results": {
+      "october_spending_cents": "3700 = coffee 575 + 625, plus Amazon 4000 - 1500 refund. T5 transfer and T6 income are left out.",
+      "october_net_cash_flow_cents": "196300 = 200000 income - 3700 spending. T5 transfer is left out.",
+      "transactions_after_seeding": "7, and still 7 after seeding again."
+    }
+  },
+  "account_name": "Synthetic Checking",
+  "imports": [
+    {
+      "id": "imp_synth_oct",
+      "filename": "synthetic_oct.csv",
+      "created_at": "2026-11-05T09:00:00+00:00",
+      "covered_start": "2026-10-01",
+      "covered_end": "2026-11-05"
+    }
+  ],
+  "merchant_aliases": [
+    {"pattern": "STARBUCKS%",       "merchant": "Starbucks"},
+    {"pattern": "AMZN%",            "merchant": "Amazon"},
+    {"pattern": "XFER TO SAVINGS%", "merchant": "Transfer to Savings"},
+    {"pattern": "ACME PAYROLL%",    "merchant": "Paycheck"}
+  ],
+  "transactions": [
+    {"id": "T1", "account_id": "acct_synth_1", "source_transaction_id": "SYN-0001", "import_id": "imp_synth_oct", "source_row_number": 1, "posted_date": "2026-10-03", "description": "STARBUCKS #1234", "amount_cents": -575,   "predicted_type": "expense",  "predicted_category": "Coffee"},
+    {"id": "T2", "account_id": "acct_synth_1", "source_transaction_id": "SYN-0002", "import_id": "imp_synth_oct", "source_row_number": 2, "posted_date": "2026-10-10", "description": "STARBUCKS #0987", "amount_cents": -625,   "predicted_type": "expense",  "predicted_category": "Coffee"},
+    {"id": "T3", "account_id": "acct_synth_1", "source_transaction_id": "SYN-0003", "import_id": "imp_synth_oct", "source_row_number": 3, "posted_date": "2026-10-15", "description": "AMZN MKTP US",    "amount_cents": -4000,  "predicted_type": "expense",  "predicted_category": "Shopping"},
+    {"id": "T4", "account_id": "acct_synth_1", "source_transaction_id": "SYN-0004", "import_id": "imp_synth_oct", "source_row_number": 4, "posted_date": "2026-10-20", "description": "AMZN REFUND",     "amount_cents": 1500,   "predicted_type": "refund",   "predicted_category": "Shopping"},
+    {"id": "T5", "account_id": "acct_synth_1", "source_transaction_id": "SYN-0005", "import_id": "imp_synth_oct", "source_row_number": 5, "posted_date": "2026-10-25", "description": "XFER TO SAVINGS", "amount_cents": -20000, "predicted_type": "transfer", "predicted_category": "Transfer"},
+    {"id": "T6", "account_id": "acct_synth_1", "source_transaction_id": "SYN-0006", "import_id": "imp_synth_oct", "source_row_number": 6, "posted_date": "2026-10-31", "description": "ACME PAYROLL",    "amount_cents": 200000, "predicted_type": "income",   "predicted_category": "Income"},
+    {"id": "T7", "account_id": "acct_synth_1", "source_transaction_id": "SYN-0007", "import_id": "imp_synth_oct", "source_row_number": 7, "posted_date": "2026-11-04", "description": "STARBUCKS #1234", "amount_cents": -600,   "predicted_type": "expense",  "predicted_category": "Coffee"}
+  ]
+}

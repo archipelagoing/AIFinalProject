@@ -1,0 +1,20 @@
+{
+  "total_examples": 160,
+  "train_examples": 100,
+  "test_examples": 60,
+  "train_scenarios": [
+    "category_spending",
+    "expense_total",
+    "income_total",
+    "largest_expenses",
+    "surplus"
+  ],
+  "test_scenarios": [
+    "clarification_missing_data",
+    "comparison_question",
+    "merchant_question"
+  ],
+  "duplicate_questions": 0,
+  "scenario_leakage": false,
+  "all_examples_synthetic": true
+}

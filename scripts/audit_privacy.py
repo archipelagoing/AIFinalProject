@@ -35,6 +35,12 @@ def is_planning_matrix(path: Path, plan: Path) -> bool:
     fields = ["requirement_id", "requirement_description", "ticket_id", "mapping_status",
               "verification_status", "automated_test_id", "evidence_url"]
     try:
+        # The repository keeps planning documents under planning/, while older
+        # callers may still pass the historical repository-root path.
+        if not plan.is_file():
+            candidate = plan.parent / "planning" / plan.name
+            if candidate.is_file():
+                plan = candidate
         tickets = set(re.findall(r"^- \[[ xX]\] \*\*(CMP-\d{4}-D[1-4]-\d{2})\b", plan.read_text(), re.M))
         with path.open(encoding="utf-8-sig", newline="") as source:
             reader = csv.DictReader(source, strict=True)

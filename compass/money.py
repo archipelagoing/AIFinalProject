@@ -12,8 +12,26 @@ from decimal import Decimal, ROUND_HALF_UP, InvalidOperation
 # ROUND_HALF_UP    -> "school" rounding: .5 always rounds away from zero (2.5 -> 3, -2.5 -> -3)
 # InvalidOperation -> error Decimal raises when given text that isn't a number
 
-# Kinds of transaction that count toward spending. Transfers and income never do.
-SPENDING_KINDS = ("purchase", "refund")
+# Transaction types, matching the repo's own types (compass.contracts.TransactionType
+# and the CHECK rule on transactions.predicted_type in compass/db.py):
+#   'expense'  = money spent (negative)        'refund'   = money back from a shop (positive)
+#   'income'   = pay, salary (positive)        'transfer' = moving your own money (either sign)
+#   'unknown'  = not classified yet
+#
+# Only expenses and refunds count toward spending.
+# 'unknown' is NOT counted, and it is listed as excluded so the user can see it
+# and classify it, rather than it silently changing totals.
+SPENDING_KINDS = ("expense", "refund")
+
+
+def kind_of(t) -> str:
+    """The transaction's type as plain text.
+
+    Works whether .kind is plain text ('expense') or a TransactionType enum
+    (TransactionType.EXPENSE -> 'expense'), so rows from the repo's
+    Transaction objects and from SQL both behave the same way.
+    """
+    return getattr(t.kind, "value", t.kind)
 
 
 @dataclass(frozen=True)
@@ -24,7 +42,7 @@ class Txn:
     """
     id: str
     posted_date: str      # 'YYYY-MM-DD' - ISO text, so string order == date order
-    kind: str             # 'purchase' | 'refund' | 'income' | 'transfer'
+    kind: str             # 'expense' | 'refund' | 'income' | 'transfer' | 'unknown'
     amount_cents: int     # signed, bank-style: money out is negative
     currency: str = "USD"
 
@@ -136,34 +154,34 @@ def pct_change(old: int, new: int) -> Decimal | None:
 def spending_cents(txns) -> int:
     """Total spending as a POSITIVE number of cents.
 
-    Each txn needs .amount_cents (signed, bank-style: purchases negative,
-    refunds positive) and .kind ('purchase', 'refund', 'income' or 'transfer').
+    Each txn needs .amount_cents (signed, bank-style: expenses negative,
+    refunds positive) and .kind ('expense', 'refund', 'income', 'transfer' or 'unknown').
     Note: sqlite3.Row uses t["amount_cents"], not t.amount_cents - convert rows
     to objects/dataclasses first, or switch this to dict-style access.
     """
 
-    # 1. Keep only purchases and refunds; transfers and income are NOT spending.
-    # 2. Sum them: purchases (negative) and refunds (positive) net out naturally.
+    # 1. Keep only expenses and refunds; transfers, income and unknown are NOT spending.
+    # 2. Sum them: expenses (negative) and refunds (positive) net out naturally.
     #      -575 - 625 - 4000 + 1500 = -3700
     # 3. Negate: -3700 -> 3700, because users expect "you spent $37.00".
     #    The (... for t in txns ...) is a generator expression: values are added
     #    one at a time without building a list in memory first.
-    return -sum(t.amount_cents for t in txns if t.kind in SPENDING_KINDS)
+    return -sum(t.amount_cents for t in txns if kind_of(t) in SPENDING_KINDS)
 
 
 def excluded_from_spending(txns) -> list[str]:
-    """IDs of transactions left out of spending (transfers, income).
+    """IDs of transactions left out of spending (transfers, income, unknown).
 
     Every total must be able to disclose what it excluded, so this list
     travels with the number to the UI and the X-Ray panel.
     """
-    return [t.id for t in txns if t.kind not in SPENDING_KINDS]
+    return [t.id for t in txns if kind_of(t) not in SPENDING_KINDS]
 
 
 def spending_label(cents: int) -> str:
     """Human label for a spending total.
 
-    A period where refunds outweigh purchases has negative spending.
+    A period where refunds outweigh expenses has negative spending.
     Show it as a 'net refund' instead of a confusing '-$15.00 spent'.
     """
     if cents < 0:
@@ -175,12 +193,16 @@ def spending_label(cents: int) -> str:
 
 
 def net_cash_flow_cents(txns) -> int:
-    """Net recorded cash flow: income + purchases + refunds, transfers excluded.
+    """Net recorded cash flow: income + expenses + refunds.
 
-    Transfers move money between YOUR OWN accounts, so they are neither
-    money in nor money out. 'Recorded' = only what is in the data; nothing estimated.
+    Left out:
+      transfers - they move money between YOUR OWN accounts, so they are
+                  neither money in nor money out.
+      unknown   - we can't tell yet whether it's spending, income or a transfer,
+                  so we don't guess. Show it as "unclassified" instead.
+    'Recorded' = only what is in the data; nothing estimated.
     """
-    return sum(t.amount_cents for t in txns if t.kind != "transfer")
+    return sum(t.amount_cents for t in txns if kind_of(t) not in ("transfer", "unknown"))
 
 
 def in_period(posted_date: str, start: str, end: str) -> bool:
@@ -200,6 +222,6 @@ def spending_by_currency(txns) -> dict[str, int]:
     """
     totals: dict[str, int] = {}
     for t in txns:
-        if t.kind in SPENDING_KINDS:
+        if kind_of(t) in SPENDING_KINDS:
             totals[t.currency] = totals.get(t.currency, 0) - t.amount_cents
     return totals

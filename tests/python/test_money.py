@@ -103,10 +103,19 @@ def test_golden_case(case):
 
 # ---------- guards on the golden file itself ----------
 
-def test_golden_file_has_ten_unique_cases():
+def test_golden_file_has_at_least_ten_unique_cases():
+    # Ticket acceptance: "Ten edge cases have expected outputs". More is fine.
     ids = [c["id"] for c in CASES]
-    assert len(ids) == 10
+    assert len(ids) >= 10
     assert len(set(ids)) == len(ids), "case ids must be unique"
+
+
+def test_golden_kinds_match_repo_transaction_types():
+    # Must use the same type names as compass.contracts.TransactionType / compass/db.py.
+    allowed = {"expense", "refund", "income", "transfer", "unknown"}
+    rows = [r for fx in GOLDEN["fixtures"].values() for r in fx]
+    rows += [r for c in CASES for r in c["input"].get("txns", [])]
+    assert {r["kind"] for r in rows} <= allowed
 
 
 def test_golden_amounts_are_integers():
@@ -154,6 +163,20 @@ def test_average_rounds_half_up_not_bankers():
     # Python's round(500.5) == 500; money rule says 501.
     assert average_cents(1001, 2) == 501
     assert average_cents(1000, 3) == 333
+
+
+def test_kind_works_with_enum_values():
+    # Repo code may pass TransactionType enums instead of plain text.
+    from enum import Enum
+
+    class FakeType(Enum):
+        EXPENSE = "expense"
+        TRANSFER = "transfer"
+
+    txns = [Txn("a", "2026-10-01", FakeType.EXPENSE, -700),
+            Txn("b", "2026-10-02", FakeType.TRANSFER, -9000)]
+    assert spending_cents(txns) == 700
+    assert excluded_from_spending(txns) == ["b"]
 
 
 def test_pct_change_negative_baseline_keeps_direction():

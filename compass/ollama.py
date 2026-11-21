@@ -23,6 +23,51 @@ INTENT_SCHEMA = {
 VALIDATOR = Draft202012Validator(INTENT_SCHEMA)
 TIMEOUT_SECONDS = 4.0
 MAX_RESPONSE_BYTES = 65536
+MAX_MODEL_ATTEMPTS = 2
+
+
+class InvalidModelOutput(ValueError):
+    """The model response is ambiguous, malformed, or outside its allowlist."""
+
+
+def _unique_object(pairs: list[tuple[str, object]]) -> dict:
+    result = {}
+    for key, value in pairs:
+        if key in result:
+            raise InvalidModelOutput("Duplicate JSON field.")
+        result[key] = value
+    return result
+
+
+def _reject_constant(value: str):
+    raise InvalidModelOutput(f"Nonstandard JSON constant: {value}.")
+
+
+def parse_model_output(content: str, expected: Request) -> Request:
+    """Parse the structured intent and refuse anything unlike the safe request.
+
+    This function has no access to transaction data or execution tools. A model
+    response can only confirm the independently parsed request, never select a
+    different tool, month, category, or limit.
+    """
+    if not isinstance(content, str):
+        raise InvalidModelOutput("Model output is missing or too large.")
+    try:
+        if len(content.encode("utf-8")) > MAX_RESPONSE_BYTES:
+            raise InvalidModelOutput("Model output is missing or too large.")
+    except UnicodeError as error:
+        raise InvalidModelOutput("Model output is not valid UTF-8 text.") from error
+    try:
+        candidate = json.loads(content, object_pairs_hook=_unique_object,
+                               parse_constant=_reject_constant)
+        VALIDATOR.validate(candidate)
+    except (json.JSONDecodeError, UnicodeError, ValidationError, TypeError, RecursionError) as error:
+        raise InvalidModelOutput("Model output did not match the intent schema.") from error
+    if not isinstance(candidate, dict) or type(candidate.get("limit")) is not int:
+        raise InvalidModelOutput("Model output did not match the intent schema.")
+    if candidate != asdict(expected):
+        raise InvalidModelOutput("Model changed the deterministic request.")
+    return Request(**candidate)
 
 
 def _post(path: str, payload: dict, deadline: float) -> dict:
@@ -78,20 +123,30 @@ def route(question: str, transactions, selected_month: str, *, model: str = "",
         if (details.get("remote_host") or details.get("remote_model")
                 or details.get("details", {}).get("format") != "gguf"):
             raise ValueError("Local model metadata required.")
-        response = _post("/api/chat", {
-            "model": model, "stream": False, "format": INTENT_SCHEMA,
-            "options": {"temperature": 0, "num_predict": 160, "num_ctx": 2048},
-            "messages": [
-                {"role": "system", "content": "Route this financial question to the provided JSON schema. Do not calculate money. Preserve the validated month, category and count. Return only JSON."},
-                {"role": "user", "content": json.dumps({"question": question, "validated_request": asdict(expected)})},
-            ],
-        }, deadline)
-        if response.get("done") is not True:
-            raise ValueError("Incomplete model response.")
-        candidate = json.loads(response["message"]["content"])
-        VALIDATOR.validate(candidate)
-        if type(candidate["limit"]) is not int or candidate != asdict(expected):
-            raise ValueError("Model changed the question's filters or intent.")
-        return Request(**candidate), "Local Ollama routing (validated against deterministic interpretation)"
-    except (OSError, http.client.HTTPException, ValueError, TypeError, KeyError, AttributeError, ValidationError, RecursionError):
+        messages = [
+            {"role": "system", "content": "Route this financial question to the provided JSON schema. Do not calculate money. Preserve the validated month, category and count. Return only JSON."},
+            {"role": "user", "content": json.dumps({"question": question, "validated_request": asdict(expected)})},
+        ]
+        for attempt in range(MAX_MODEL_ATTEMPTS):
+            if attempt:
+                # Never echo untrusted malformed output back into a retry prompt.
+                messages.append({"role": "system", "content": "The previous response failed validation. Return the validated_request object exactly, using only the required schema fields."})
+            response = _post("/api/chat", {
+                "model": model, "stream": False, "format": INTENT_SCHEMA,
+                "options": {"temperature": 0, "num_predict": 160, "num_ctx": 2048},
+                "messages": messages,
+            }, deadline)
+            if not isinstance(response, dict) or response.get("done") is not True:
+                raise ValueError("Incomplete model response.")
+            message = response.get("message")
+            content = message.get("content") if isinstance(message, dict) else None
+            try:
+                request = parse_model_output(content, expected)
+            except InvalidModelOutput:
+                if attempt + 1 == MAX_MODEL_ATTEMPTS:
+                    raise
+                continue
+            return request, "Local Ollama routing (validated against deterministic interpretation)"
+        raise InvalidModelOutput("Model did not produce a valid intent.")
+    except (OSError, http.client.HTTPException, ValueError, TypeError, KeyError, AttributeError, RecursionError):
         return expected, "Deterministic fallback: local router unavailable or its response failed validation."

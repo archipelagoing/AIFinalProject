@@ -1,0 +1,16 @@
+date,description,amount,account,transaction_id
+2025-06-19,Transfer to Savings,-500.0,Checking,TX_2025_06_000
+2025-06-26,Starbucks,-9.73,Checking,TX_2025_06_001
+2025-06-07,Uber,-11.41,Checking,TX_2025_06_002
+2025-06-14,Transfer to Savings,-500.0,Checking,TX_2025_06_003
+2025-06-15,Uber,-22.96,Checking,TX_2025_06_004
+2025-06-22,Whole Foods,-92.28,Checking,TX_2025_06_005
+2025-06-04,Transfer to Savings,-500.0,Checking,TX_2025_06_006
+2025-06-11,Transfer to Savings,-500.0,Checking,TX_2025_06_007
+2025-06-08,Whole Foods,-55.33,Checking,TX_2025_06_008
+2025-06-15,Tech Corp Payroll,3570.09,Checking,TX_2025_06_009
+2025-06-09,Starbucks,-9.63,Checking,TX_2025_06_010
+2025-06-15,Whole Foods,-104.64,Checking,TX_2025_06_011
+2025-06-04,Tech Corp Payroll,3525.29,Checking,TX_2025_06_012
+2025-06-27,Tech Corp Payroll,3507.38,Checking,TX_2025_06_013
+2025-06-25,Whole Foods,-107.9,Checking,TX_2025_06_014

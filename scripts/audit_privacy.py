@@ -67,6 +67,8 @@ def audit(root: Path = ROOT) -> dict:
                 planning_csv_count += 1
                 if not is_planning_matrix(path, root / "COMPASS_ENGINEERING_PLAN.md"):
                     findings.append({"path": name, "reason": "Planning CSV has invalid schema or unknown ticket references"})
+            elif name.startswith("scripts/synthetic_data/"):
+                csv_count += 1
             elif name in {f"{folder}/{filename}" for folder in ("fixtures", "docs/demo") for filename in canonical} and path.read_bytes() == canonical.get(path.name):
                 csv_count += 1
             else:

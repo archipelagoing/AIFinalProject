@@ -1,0 +1,16 @@
+date,description,amount,account,transaction_id
+2026-10-19,Starbucks,-7.55,Checking,TX_2026_10_000
+2026-10-25,Starbucks,-13.59,Checking,TX_2026_10_001
+2026-10-14,Transfer to Savings,-500.0,Checking,TX_2026_10_002
+2026-10-07,Starbucks,-15.99,Checking,TX_2026_10_003
+2026-10-04,Uber,-15.17,Checking,TX_2026_10_004
+2026-10-21,Transfer to Savings,-500.0,Checking,TX_2026_10_005
+2026-10-08,Starbucks,-11.64,Checking,TX_2026_10_006
+2026-10-29,Tech Corp Payroll,3810.4,Checking,TX_2026_10_007
+2026-10-18,Tech Corp Payroll,3783.17,Checking,TX_2026_10_008
+2026-10-15,Tech Corp Payroll,3948.5,Checking,TX_2026_10_009
+2026-10-27,Uber,-32.51,Checking,TX_2026_10_010
+2026-10-30,Amazon,-54.42,Checking,TX_2026_10_011
+2026-10-09,Uber,-9.21,Checking,TX_2026_10_012
+2026-10-31,Transfer to Savings,-500.0,Checking,TX_2026_10_013
+2026-10-01,Starbucks,-15.74,Checking,TX_2026_10_014

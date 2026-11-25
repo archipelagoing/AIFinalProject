@@ -1,0 +1,16 @@
+date,description,amount,account,transaction_id
+2025-12-19,Whole Foods,-107.29,Checking,TX_2025_12_000
+2025-12-12,Whole Foods,-88.79,Checking,TX_2025_12_001
+2025-12-19,Transfer to Savings,-500.0,Checking,TX_2025_12_002
+2025-12-27,Starbucks,-14.31,Checking,TX_2025_12_003
+2025-12-30,Uber,-15.03,Checking,TX_2025_12_004
+2025-12-02,Transfer to Savings,-500.0,Checking,TX_2025_12_005
+2025-12-13,Uber,-19.58,Checking,TX_2025_12_006
+2025-12-09,Whole Foods,-91.23,Checking,TX_2025_12_007
+2025-12-07,Starbucks,-9.0,Checking,TX_2025_12_008
+2025-12-30,Uber,-12.75,Checking,TX_2025_12_009
+2025-12-03,Uber,-11.22,Checking,TX_2025_12_010
+2025-12-24,Amazon,-44.84,Checking,TX_2025_12_011
+2025-12-14,Whole Foods,-76.63,Checking,TX_2025_12_012
+2025-12-10,Whole Foods,-72.0,Checking,TX_2025_12_013
+2025-12-29,Amazon,-70.33,Checking,TX_2025_12_014

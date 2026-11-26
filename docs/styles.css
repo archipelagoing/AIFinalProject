@@ -227,3 +227,11 @@ button:disabled { opacity: 1; cursor: progress; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
 }
+
+/* Wrapped entry and resumable local story. */
+.wrapped-entry{display:flex;align-items:center;justify-content:space-between;gap:24px;margin:0 0 23px}
+.wrapped-entry h2{font-size:20px}.wrapped-entry .eyebrow{margin-bottom:8px}.wrapped-entry p{margin:8px 0 0;font-size:11px;line-height:1.6}
+.wrapped-entry-action,.wrapped-actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap}.wrapped-entry-action .primary{text-decoration:none}
+.wrapped-card{max-width:820px;margin:0 auto;padding:clamp(22px,5vw,48px)}.wrapped-card h2{font-family:var(--font-display);font-size:clamp(24px,4vw,36px);margin:12px 0 18px}.wrapped-card>p{line-height:1.75}.wrapped-progress{display:flex;gap:8px;margin-bottom:32px}.wrapped-progress span{height:6px;flex:1;border-radius:999px;background:var(--compass-surface-soft);border:1px solid var(--compass-border)}.wrapped-progress span.done,.wrapped-progress span.current{background:var(--compass-brand);border-color:var(--compass-brand)}
+.wrapped-story-copy{font-size:15px;line-height:1.8;margin:16px 0}.wrapped-story-copy strong{font-size:1.1em;color:var(--compass-brand)}.wrapped-categories{list-style:none;padding:0;margin:18px 0}.wrapped-categories li{display:flex;justify-content:space-between;gap:16px;padding:12px 0;border-bottom:1px solid var(--compass-border)}.wrapped-actions{justify-content:space-between;margin-top:25px}.wrapped-actions a{text-decoration:none}
+@media(max-width:600px){.wrapped-entry{align-items:flex-start;flex-direction:column}.wrapped-entry-action{width:100%;justify-content:space-between}.wrapped-card{padding:22px 18px}.wrapped-actions>*{flex:1}.sidebar nav{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:3px;overflow:visible}.sidebar nav a{font-size:9px;padding:8px 5px;gap:4px;min-height:44px;flex:initial}}

@@ -1,5 +1,5 @@
 import { TYPES, CATEGORIES, emptyState, importCSV, summarize, months, monthName, money, effective, correctTransaction, parseMoney, calculateScenario, rentCandidates, askQuestion } from './engine.js';
-import { loadState, saveState, clearState } from './storage.js';
+import { loadState, saveState, clearState, loadWrappedProgress, saveWrappedProgress } from './storage.js';
 
 const $ = selector => document.querySelector(selector);
 const escape = value => String(value).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -10,7 +10,8 @@ const titles = {
   overview: ['Your money, in perspective.', 'Understand where you are. Explore where you could go.'],
   transactions: ['The details make the difference.', 'Review the source. Keep your picture of spending accurate.'],
   ask: ['A question worth asking.', 'Real calculations, with the transactions to back them up.'],
-  whatif: ['Make room for what’s next.', 'Explore how a recurring change could reshape your monthly surplus.']
+  whatif: ['Make room for what’s next.', 'Explore how a recurring change could reshape your monthly surplus.'],
+  wrapped: ['Your month, in a few moments.', 'A local story from imported activity, with its coverage limits in view.']
 };
 function notice(message, error = false) {
   $('#notice').textContent = message;
@@ -52,10 +53,11 @@ function render() {
   $('#row-count').textContent = state.transactions.length;
   const page = Object.hasOwn(titles, location.hash.slice(1)) ? location.hash.slice(1) : 'overview';
   document.querySelectorAll('[data-page]').forEach(a => { a.classList.toggle('active', a.dataset.page === page); if (a.dataset.page === page) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
-  $('#page-label').textContent = ({ overview: 'Overview', transactions: 'Transactions', ask: 'Ask Compass', whatif: 'What If?' })[page];
+  $('#page-label').textContent = ({ overview: 'Overview', transactions: 'Transactions', ask: 'Ask Compass', whatif: 'What If?', wrapped: 'Wrapped' })[page];
   $('#heading').textContent = titles[page][0]; $('#subtitle').textContent = titles[page][1];
   document.querySelectorAll('.view').forEach(v => { v.hidden = v.id !== `view-${page}`; });
-  $('#empty').hidden = available.length > 0 || page === 'ask';
+  $('#empty').hidden = available.length > 0 || page === 'ask' || page === 'wrapped';
+  $('#wrapped-empty').hidden = available.length > 0 || page !== 'wrapped';
   $('#workspace').hidden = !available.length && page !== 'ask';
   if (!available.length) {
     if (page === 'ask') {
@@ -71,6 +73,7 @@ function render() {
   $('#dataset-label').textContent = allDemo ? 'Fictional demo data' : 'Imported statement data';
   $('#dataset-detail').textContent = `· ${state.transactions.length} transactions · ${new Set(state.transactions.map(t => t.account)).size} accounts`;
   $('#quality').innerHTML = warnings(summary);
+  renderWrapped(summary);
   $('#metrics').innerHTML = [
     ['Verified income', summary.income, 'Income transactions only', '↓', 'income'],
     ['Net expenses', summary.expenses, 'Expenses, less refunds', '↑', 'expenses'],
@@ -83,6 +86,21 @@ function render() {
   renderRent(summary);
   renderScenario(summary);
   renderAnswer();
+}
+function renderWrapped(summary) {
+  const progress = loadWrappedProgress(localStorage, selectedMonth);
+  const stories = [
+    { title: `${monthName(selectedMonth)} at a glance`, body: `<p>Classified activity shows <strong>${money(summary.income)}</strong> income and <strong>${money(summary.expenses)}</strong> net expenses, for a <strong>${money(summary.surplus)}</strong> surplus.</p><p class="small muted">Surplus describes imported activity; it is not an account balance or available cash.</p>`, rows: [...summary.incomeRows, ...summary.expenseRows] },
+    { title: 'Where spending was classified', body: Object.keys(summary.categories).length ? `<ul class="wrapped-categories">${Object.entries(summary.categories).sort((a,b)=>b[1]-a[1]).map(([name, cents])=>`<li><span>${escape(name)}</span><strong>${money(cents)}</strong></li>`).join('')}</ul>` : '<p>No classified spending is available for this month.</p>', rows: summary.expenseRows },
+    { title: 'Coverage is part of the story', body: `<p>${summary.rows.length} imported transaction rows appear in this month. ${summary.unknown.length ? `${summary.unknown.length} unresolved row(s) are excluded from classified totals.` : 'No unresolved rows were found in this month.'}</p><p class="small muted">Statement coverage is not verified. Transfers and unresolved activity remain excluded as shown in the data quality details.</p>${warnings(summary)}`, rows: summary.rows }
+  ];
+  const completed = progress === stories.length;
+  const active = Math.min(progress, stories.length - 1);
+  const entryCopy = completed ? 'You’ve completed this month’s three story moments. Revisit any time.' : 'A short story built from the selected month and its source activity.';
+  if ($('#wrapped-entry-copy')) $('#wrapped-entry-copy').textContent = entryCopy;
+  if ($('#wrapped-entry-progress')) $('#wrapped-entry-progress').textContent = completed ? 'Complete · 3 of 3' : progress ? `Resume · ${progress} of 3` : 'Not started · 3 moments';
+  const story = stories[active];
+  $('#wrapped-story').innerHTML = `<section class="card wrapped-card"><div class="wrapped-progress" role="progressbar" aria-label="Wrapped story progress" aria-valuemin="0" aria-valuemax="${stories.length}" aria-valuenow="${progress}" aria-valuetext="${progress} of ${stories.length} moments complete">${stories.map((_, i) => `<span aria-hidden="true" class="${i < progress ? 'done' : ''} ${i === active && !completed ? 'current' : ''}"></span>`).join('')}</div>${completed ? `<p class="eyebrow">STORY COMPLETE</p><h2>You’ve seen this month’s story.</h2><p>All three moments use the current local classifications for ${escape(monthName(selectedMonth))}.</p><button class="secondary" data-wrapped-action="restart">Start again</button>` : `<p class="eyebrow">MOMENT ${active + 1} OF ${stories.length}</p><h2>${story.title}</h2><div class="wrapped-story-copy">${story.body}</div>${evidence(summary, story.rows, 'Inspect source activity')}<div class="wrapped-actions"><a class="secondary" href="#overview">Back to overview</a><button class="primary" data-wrapped-action="continue">${progress ? 'Continue story' : 'Continue'} <span aria-hidden="true">→</span></button></div>`}</section>`;
 }
 function renderSpending(summary) {
   $('#spending-period').textContent = monthName(selectedMonth);
@@ -171,6 +189,20 @@ async function loadDemo() {
   finally { buttons.forEach(b => { b.disabled = false; b.removeAttribute('aria-busy'); }); }
 }
 $('#demo-button').onclick = loadDemo; $('#load-demo').onclick = loadDemo;
+$('#wrapped-empty-import').onclick = openImport;
+$('#wrapped-empty-demo').onclick = loadDemo;
+$('#wrapped-story').addEventListener('click', event => {
+  const action = event.target.closest('[data-wrapped-action]')?.dataset.wrappedAction;
+  if (!action || !selectedMonth) return;
+  const current = loadWrappedProgress(localStorage, selectedMonth);
+  try {
+    saveWrappedProgress(localStorage, selectedMonth, action === 'restart' ? 0 : Math.min(3, current + 1));
+    render();
+    // Keep keyboard and assistive-technology users at the updated story control.
+    $('#wrapped-story [data-wrapped-action]')?.focus();
+  }
+  catch { notice('Wrapped progress could not be saved in this browser. Your statement data is unchanged.', true); }
+});
 function openImport() {
   showModal('Import a CSV statement', '<p>Use fictional statements for this public prototype. Selected file contents are processed in your browser and saved here; they are not uploaded.</p><p>Required header: <code>date,description,amount,account,transaction_id</code></p><p>Dates: YYYY-MM-DD. Amounts: signed decimals (positive inflow, negative outflow). Leave transaction_id cells blank only when the source has no IDs. Imports are atomic: a rejected row means no rows are added.</p><p>Overlapping files and conflicting IDs are blocked for manual source review.</p><button class="primary" id="choose-file">Choose CSV file →</button><p id="import-message" class="modal-message" role="status"></p>');
   $('#choose-file').onclick = () => $('#file-input').click();

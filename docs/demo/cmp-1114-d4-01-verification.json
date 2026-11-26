@@ -1,0 +1,36 @@
+{
+  "ticket": "CMP-1114-D4-01",
+  "verified_on": "2026-11-26",
+  "automated": {
+    "command": "npm test",
+    "result": "passed",
+    "tests": 22,
+    "failures": 0
+  },
+  "diff_check": "passed",
+  "live_browser_review": {
+    "result": "passed",
+    "browser": "Google Chrome",
+    "desktop": "Overview entry opens Wrapped; fixture-derived May 2026 amounts match the existing expected totals.",
+    "mobile_viewport": "390x800 responsive emulation",
+    "mobile": "All five navigation links are visible across two rows; Wrapped empty state and populated story fit the viewport and remain scrollable.",
+    "story_progress": "Advanced through all three moments; progress survived a reload and resumed at moment three.",
+    "coverage_and_evidence": "The unverified-coverage notice remains visible; story details expose inspectable source activity.",
+    "empty_state": "Verified on a separate localhost origin with no saved records; import/demo actions and no-fabricated-total copy were visible.",
+    "loading_and_error": "Loading status and alert error paths are present in the demo/import UI and progress-save handler; failure injection was not performed."
+  },
+  "dependencies": {
+    "CMP-1112-D1-01": "The static app uses the documented browser-localStorage contract and consumes no shared API. The planning ticket remains unchecked, so its formal completion is unconfirmed; no server API is required by this UI path.",
+    "CMP-1112-D4-05": "Confirmed in the current integration branch: commit dfd4966 adds the Playwright smoke harness, and .github/workflows/e2e-smoke.yml runs it in CI. This harness targets app.py, separate from the GitHub Pages app."
+  },
+  "visual_artifact": "This JSON records the live review results; no standalone screenshot file was saved.",
+  "cross_owner_review": "pending",
+  "pull_request": "https://github.com/archipelagoing/AIFinalProject/pull/7",
+  "ci": {
+    "end_to_end_smoke": "passed",
+    "python_tests": "281 passed",
+    "github_pages": "passed",
+    "workflow_run": "https://github.com/archipelagoing/AIFinalProject/actions/runs/45889879299",
+    "evidence_artifact": "https://github.com/archipelagoing/AIFinalProject/actions/runs/45889879299"
+  }
+}

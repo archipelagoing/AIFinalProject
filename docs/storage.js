@@ -1,5 +1,20 @@
 import { emptyState, TYPES, months, summarize } from './engine.js';
 export const STORAGE_KEY = 'compass:alpha:1';
+export const WRAPPED_PROGRESS_KEY = 'compass:wrapped-progress:1';
+export function loadWrappedProgress(storage, month) {
+  try {
+    const progress = JSON.parse(storage.getItem(WRAPPED_PROGRESS_KEY) || '{}');
+    const index = progress[month];
+    return Number.isInteger(index) && index >= 0 && index <= 3 ? index : 0;
+  } catch { return 0; }
+}
+export function saveWrappedProgress(storage, month, index) {
+  if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month) || !Number.isInteger(index) || index < 0 || index > 3) throw new Error('Invalid Wrapped progress.');
+  let progress = {};
+  try { progress = JSON.parse(storage.getItem(WRAPPED_PROGRESS_KEY) || '{}'); } catch { /* replace invalid progress with a clean value */ }
+  progress[month] = index;
+  storage.setItem(WRAPPED_PROGRESS_KEY, JSON.stringify(progress));
+}
 export function loadState(storage) {
   const raw = storage.getItem(STORAGE_KEY);
   if (!raw) return emptyState();
@@ -24,5 +39,6 @@ export function saveState(storage, state) {
 }
 export function clearState(storage) {
   storage.removeItem(STORAGE_KEY);
+  storage.removeItem(WRAPPED_PROGRESS_KEY);
   return emptyState();
 }

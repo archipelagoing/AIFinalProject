@@ -12,6 +12,8 @@ jobs:
   python-and-browser:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    env:
+      PLAYWRIGHT_BROWSERS_PATH: ${{ github.workspace }}/.local/playwright
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5

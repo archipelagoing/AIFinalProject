@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { emptyState, parseMoney, parseCSV, importCSV, summarize, classify, effective, correctTransaction, calculateScenario, rentCandidates, askQuestion, getIncome, getExpenses, getCategorySpending, getLargestExpenses, getSurplus } from '../docs/engine.js';
-import { loadState, saveState, clearState, STORAGE_KEY } from '../docs/storage.js';
+import { loadState, saveState, clearState, STORAGE_KEY, WRAPPED_PROGRESS_KEY, loadWrappedProgress, saveWrappedProgress } from '../docs/storage.js';
 const fixture = name => readFile(new URL(`../fixtures/${name}`, import.meta.url), 'utf8');
 const checking = await fixture('synthetic_checking_2026_Jan-Jun.csv');
 const savings = await fixture('synthetic_savings_2026_Jan-Jun.csv');
@@ -157,6 +157,18 @@ test('browser persistence failure leaves previous state intact', () => {
   const storage = { getItem: () => saved, setItem: () => { throw new Error('quota exceeded'); } };
   const next = correctTransaction(state, state.transactions[0].id, 'expense', 'Rent');
   assert.throws(() => saveState(storage, next)); assert.deepEqual(loadState(storage), state);
+});
+test('Wrapped story progress resumes by month and clear removes it with Compass data', () => {
+  const data = new Map();
+  const storage = { getItem: k => data.get(k) ?? null, setItem: (k, v) => data.set(k, v), removeItem: k => data.delete(k) };
+  assert.equal(loadWrappedProgress(storage, '2026-05'), 0);
+  saveWrappedProgress(storage, '2026-05', 2);
+  assert.equal(loadWrappedProgress(storage, '2026-05'), 2);
+  assert.equal(loadWrappedProgress(storage, '2026-06'), 0);
+  assert.throws(() => saveWrappedProgress(storage, '2026-05', 4));
+  clearState(storage);
+  assert.equal(data.has(WRAPPED_PROGRESS_KEY), false);
+  assert.equal(loadWrappedProgress(storage, '2026-05'), 0);
 });
 test('published demo copies match source data and production modules cannot read test oracles', async () => {
   for (const name of ['synthetic_checking_2026_Jan-Jun.csv', 'synthetic_savings_2026_Jan-Jun.csv']) assert.equal(await readFile(new URL(`../docs/demo/${name}`, import.meta.url), 'utf8'), await fixture(name));

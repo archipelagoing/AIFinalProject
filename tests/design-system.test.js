@@ -75,3 +75,19 @@ test('chat shell exposes tone, local routing, empty/loading/error and evidence s
   assert.match(css, /\.assistant-message/);
   assert.match(css, /@media \(max-width:600px\)[\s\S]*\.chat-message/);
 });
+
+test('Wrapped entry and story expose empty, progress, resume, and source evidence states', async () => {
+  const html = await readFile(new URL('../docs/index.html', import.meta.url), 'utf8');
+  const js = await readFile(new URL('../docs/app.js', import.meta.url), 'utf8');
+  assert.match(html, /href="#wrapped" data-page="wrapped"/);
+  assert.match(html, /id="wrapped-entry-progress"/);
+  assert.match(html, /id="wrapped-empty"/);
+  assert.match(html, /id="view-wrapped"/);
+  assert.match(js, /loadWrappedProgress\(localStorage, selectedMonth\)/);
+  assert.match(js, /Statement coverage is not verified/);
+  assert.match(js, /evidence\(summary, story\.rows, 'Inspect source activity'\)/);
+  assert.match(js, /Keep keyboard and assistive-technology users at the updated story control/);
+  assert.match(js, /\$\('#wrapped-story \[data-wrapped-action\]'\)\?\.focus\(\)/);
+  assert.match(js, /Your statement data is unchanged/);
+  assert.match(css, /@media\(max-width:600px\)[\s\S]*\.sidebar nav\{display:grid;grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/);
+});

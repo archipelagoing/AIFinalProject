@@ -27,6 +27,10 @@
   "cross_owner_review": "pending",
   "pull_request": "https://github.com/archipelagoing/AIFinalProject/pull/7",
   "ci": {
-    "previous_run": "Failed because Chromium was installed in Playwright's default cache while the smoke script expected .local/playwright; workflow path alignment is included in this PR and awaits rerun."
+    "end_to_end_smoke": "passed",
+    "python_tests": "281 passed",
+    "github_pages": "passed",
+    "workflow_run": "https://github.com/archipelagoing/AIFinalProject/actions/runs/45889879299",
+    "evidence_artifact": "https://github.com/archipelagoing/AIFinalProject/actions/runs/45889879299"
   }
 }

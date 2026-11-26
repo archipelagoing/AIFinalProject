@@ -25,5 +25,8 @@
   },
   "visual_artifact": "This JSON records the live review results; no standalone screenshot file was saved.",
   "cross_owner_review": "pending",
-  "pull_request": "not created"
+  "pull_request": "https://github.com/archipelagoing/AIFinalProject/pull/7",
+  "ci": {
+    "previous_run": "Failed because Chromium was installed in Playwright's default cache while the smoke script expected .local/playwright; workflow path alignment is included in this PR and awaits rerun."
+  }
 }

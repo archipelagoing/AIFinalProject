@@ -5,6 +5,7 @@ from collections.abc import Iterable
 import re
 
 from compass.contracts import Transaction, TransactionType, validate_cents
+from compass.charts import ChartRow, bar_chart, heatmap_chart, slope_chart
 
 
 @dataclass(frozen=True, slots=True)
@@ -74,6 +75,48 @@ def summarize_month(transactions: Iterable[Transaction], month: str) -> MonthSum
         tuple(row for row in rows if row.effective_type in (TransactionType.EXPENSE, TransactionType.REFUND)),
         tuple(row for row in rows if row.effective_type in (TransactionType.TRANSFER, TransactionType.UNKNOWN)),
     )
+
+
+def category_bar_chart(summary: MonthSummary):
+    """Category bars reconcile to eligible expense/refund rows in the summary."""
+    return bar_chart((ChartRow(category, cents, "Net expenses minus refunds")
+                      for category, cents in summary.category_totals.items()),
+                     exclusions=_chart_exclusions(summary))
+
+
+def daily_heatmap(summary: MonthSummary):
+    """Daily net expense cells; only days with eligible source transactions appear."""
+    totals: dict[str, int] = {}
+    for row in summary.expense_rows:
+        totals[row.posted_date] = validate_cents(totals.get(row.posted_date, 0) - row.amount_cents)
+    return heatmap_chart((ChartRow(day, cents, "Net eligible expenses and refunds")
+                          for day, cents in totals.items()), exclusions=_chart_exclusions(summary))
+
+
+def monthly_surplus_slope(transactions: Iterable[Transaction], months: Iterable[str]):
+    """Compare explicit imported months; a month without rows is rejected, not guessed."""
+    rows = tuple(transactions)
+    selected = tuple(months)
+    if len(selected) < 2 or len(set(selected)) != len(selected):
+        raise ValueError("Choose at least two distinct imported months for a slope chart.")
+    summaries = [summarize_month(rows, month) for month in selected]
+    if any(not summary.rows for summary in summaries):
+        raise ValueError("Every comparison month must contain imported activity.")
+    exclusions = tuple(sorted({item for summary in summaries for item in _chart_exclusions(summary)}))
+    return slope_chart((ChartRow(summary.month, summary.totals.surplus_cents,
+                                 "Classified income minus net expenses") for summary in summaries),
+                       exclusions=exclusions)
+
+
+def _chart_exclusions(summary: MonthSummary) -> tuple[str, ...]:
+    excluded = []
+    transfers = sum(row.effective_type == TransactionType.TRANSFER for row in summary.excluded_rows)
+    unknown = sum(row.effective_type == TransactionType.UNKNOWN for row in summary.excluded_rows)
+    if transfers:
+        excluded.append(f"{transfers} transfer transaction(s) excluded")
+    if unknown:
+        excluded.append(f"{unknown} unresolved transaction(s) excluded")
+    return tuple(excluded)
 
 
 @dataclass(frozen=True, slots=True)

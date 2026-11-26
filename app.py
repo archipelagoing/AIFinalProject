@@ -15,6 +15,7 @@ import streamlit as st
 
 from compass import analytics, classification, db, importer, ollama, questions, scenarios
 from compass.contracts import Transaction, TransactionType, format_money, parse_amount_cents
+from compass.charts import guess_actual_chart
 from compass.mapping import ColumnMapping
 
 ROOT = Path(__file__).resolve().parent
@@ -109,7 +110,25 @@ def show_snapshot(connection: sqlite3.Connection) -> None:
     st.subheader("Selected month's transactions")
     st.dataframe(evidence_rows(summary.rows, imports), hide_index=True)
     st.subheader("Net spending by category")
-    st.dataframe([{"Category": category, "Net spending": format_money(amount)} for category, amount in summary.category_totals.items()], hide_index=True)
+    category_chart = analytics.category_bar_chart(summary)
+    if category_chart:
+        st.bar_chart([{"Category": row.label, "Dollars": row.value_cents / 100} for row in category_chart.rows],
+                     x="Category", y="Dollars", horizontal=True, y_label="Dollars; zero baseline")
+        st.caption(category_chart.description + (" Exclusions: " + "; ".join(category_chart.exclusions) + "." if category_chart.exclusions else ""))
+        st.dataframe([{"Category": row.label, "Net spending": format_money(row.value_cents)} for row in category_chart.rows], hide_index=True)
+    daily_chart = analytics.daily_heatmap(summary)
+    if daily_chart:
+        st.subheader("Daily spending · accessible detail")
+        st.caption(daily_chart.description + (" Exclusions: " + "; ".join(daily_chart.exclusions) + "." if daily_chart.exclusions else ""))
+        st.dataframe([{"Activity date": row.label, "Net expenses": format_money(row.value_cents), "Detail": row.detail} for row in daily_chart.rows], hide_index=True)
+    imported_months = sorted({row.posted_date[:7] for row in transactions})
+    if len(imported_months) > 1:
+        slope = analytics.monthly_surplus_slope(transactions, imported_months[-6:])
+        st.subheader("Monthly surplus comparison")
+        st.line_chart([{"Month": row.label, "Classified surplus": row.value_cents / 100} for row in slope.rows],
+                      x="Month", y="Classified surplus", y_label="Dollars; zero baseline")
+        st.caption(slope.description + (" Exclusions: " + "; ".join(slope.exclusions) + "." if slope.exclusions else ""))
+        st.dataframe([{"Month": row.label, "Classified surplus": format_money(row.value_cents)} for row in slope.rows], hide_index=True)
     show_review(connection, summary)
     with st.expander("Inspect original row and classification rule"):
         by_id = {row.id: row for row in summary.rows}
@@ -289,6 +308,15 @@ def show_questions(transactions, imports: dict, selected_month: str) -> None:
         }
         st.caption(introductions[tone] + " Exact values come from deterministic tools.")
         st.metric("Ask Compass result", format_money(answer.amount_cents))
+        if request.tool in {"get_expenses", "get_category_spending"}:
+            guess = st.number_input("Your guess before reveal (dollars)", min_value=0.0, step=1.0,
+                                    key=f"chart_guess_{request.month}_{request.tool}_{request.category or 'all'}")
+            chart = guess_actual_chart(parse_amount_cents(f"{guess:.2f}"), answer.amount_cents,
+                                       exclusions=tuple(answer.formula.split("; ")[1:]))
+            st.bar_chart([{"Comparison": row.label, "Dollars": row.value_cents / 100} for row in chart.rows],
+                         x="Comparison", y="Dollars", horizontal=True, y_label="Dollars; zero baseline")
+            st.dataframe([{"Comparison": row.label, "Amount": format_money(row.value_cents)} for row in chart.rows], hide_index=True)
+            st.caption(chart.description + (" Exclusions: " + "; ".join(chart.exclusions) + "." if chart.exclusions else ""))
     filters = f"Tool: {request.tool}; month: {request.month}; accounts: all imported accounts"
     if request.category is not None:
         filters += f"; category: {request.category}"

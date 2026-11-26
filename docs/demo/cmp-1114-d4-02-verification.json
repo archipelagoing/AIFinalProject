@@ -1,0 +1,34 @@
+{
+  "ticket": "CMP-1114-D4-02",
+  "verified_on": "2026-11-26",
+  "automated": {
+    "command": "python3 -m pytest -q",
+    "result": "passed",
+    "tests": 286,
+    "failures": 0
+  },
+  "static_checks": {
+    "python_compile": "passed",
+    "git_diff_check": "passed"
+  },
+  "chart_primitives": [
+    "signed exact-cent ranked bar chart",
+    "daily activity heatmap data with accessible table representation",
+    "ordered monthly surplus slope chart",
+    "user guess versus transaction-derived actual chart"
+  ],
+  "safeguards": [
+    "chart domains include zero and every signed value",
+    "duplicate labels and float cents are rejected",
+    "empty data is represented as no chart rather than fabricated zero activity",
+    "unresolved and transfer exclusions are disclosed",
+    "chart rows retain exact-cent values and descriptive accessible table labels"
+  ],
+  "dependencies": {
+    "CMP-1112-D1-01": "Shared API contract completion remains unconfirmed in the existing CMP-1114-D4-01 artifact. This chart path is local and uses the established transaction contract.",
+    "CMP-1112-D4-05": "Prior gate evidence records the Playwright smoke harness and CI workflow as integrated."
+  },
+  "visual_artifact": "No screenshot saved; fixture-backed JSON verification and chart tests are attached.",
+  "cross_owner_review": "pending",
+  "pull_request": "not created"
+}

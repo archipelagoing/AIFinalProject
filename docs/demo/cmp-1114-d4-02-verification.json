@@ -25,10 +25,15 @@
     "chart rows retain exact-cent values and descriptive accessible table labels"
   ],
   "dependencies": {
-    "CMP-1112-D1-01": "Shared API contract completion remains unconfirmed in the existing CMP-1114-D4-01 artifact. This chart path is local and uses the established transaction contract.",
+    "CMP-1112-D1-01": "Implementation evidence confirmed from PR #2: clean install, 272 passing Python tests, and canonical contracts.py safeguards are recorded for Dev 1 Gate 1 Foundations. No PR review submissions are listed and the planning checklist remains unchecked, so reviewer sign-off and backlog closure are not confirmed. This chart path uses the established transaction contract.",
     "CMP-1112-D4-05": "Prior gate evidence records the Playwright smoke harness and CI workflow as integrated."
   },
-  "visual_artifact": "No screenshot saved; fixture-backed JSON verification and chart tests are attached.",
-  "cross_owner_review": "pending",
-  "pull_request": "not created"
+  "visual_artifact": "Fixture-backed chart UI was inspected in Chrome using synthetic May 2026 activity. The PR contains the test/evidence artifact; no standalone screenshot file was saved.",
+  "cross_owner_review": {
+    "status": "requested",
+    "reviewer": "omj21zenith-pixel",
+    "pull_request": "https://github.com/archipelagoing/AIFinalProject/pull/8"
+  },
+  "pull_request": "https://github.com/archipelagoing/AIFinalProject/pull/8",
+  "pull_request_base": "codex/cmp-1114-d4-01-home-to-wrapped"
 }

@@ -1,0 +1,21 @@
+{
+  "month": "2026-01",
+  "category_totals": {
+    "Debt payment": 11000,
+    "Fitness": 1500,
+    "Groceries": 24994,
+    "Health": 1168,
+    "Housing": 127500,
+    "Insurance": 13200,
+    "Internet": 4900,
+    "Phone": 5800,
+    "Restaurants": 11268,
+    "Subscriptions": 2748,
+    "Transportation": 11206,
+    "Utilities": 12100
+  },
+  "income_cents": 370000,
+  "expenses_cents": 227384
+}
+
+--- TICKET 3 ACCEPTANCE PASSED: Golden fixture successfully mapped to UI chart data ---

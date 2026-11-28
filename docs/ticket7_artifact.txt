@@ -1,0 +1,11 @@
+--- First Import ---
+Imported rows: 2
+Duplicate detected: False
+
+--- Second Import (Duplicate) ---
+Imported rows: 0
+Duplicate detected: True
+
+Total rows in database: 2
+
+--- TICKET 2 ACCEPTANCE PASSED: No double count ---

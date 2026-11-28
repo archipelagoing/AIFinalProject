@@ -2,5 +2,3 @@
 streamlit>=1.67,<1.68
 pytest>=9.2,<9.3
 jsonschema>=4.26,<5
-# CMP-1112-D2-04: strict tool-argument schemas (compass/tool_contracts.py); approved by Dev 1 (Q1).
-pydantic>=2.14,<3

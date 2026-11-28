@@ -1,0 +1,6 @@
+--- TICKET 3 ARTIFACT ---
+Valid rows: 1
+Invalid rows: 1
+Rejected: 2
+Issues identified:
+ - Row 3: Use a signed decimal such as -1275.00, with at most two decimal places.

@@ -1,0 +1,5 @@
+Before correction - Category: Uncategorized
+After correction  - Category: Coffee
+Has correction flag: True
+Coffee aggregate total: 5000 cents
+--- TICKET 1 ACCEPTANCE PASSED ---

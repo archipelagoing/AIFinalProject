@@ -1,0 +1,16 @@
+date,description,amount,account,transaction_id
+2025-05-22,Transfer to Savings,-500.0,Checking,TX_2025_05_000
+2025-05-26,Tech Corp Payroll,3849.32,Checking,TX_2025_05_001
+2025-05-04,Transfer to Savings,-500.0,Checking,TX_2025_05_002
+2025-05-07,Transfer to Savings,-500.0,Checking,TX_2025_05_003
+2025-05-04,Transfer to Savings,-500.0,Checking,TX_2025_05_004
+2025-05-02,Amazon,-41.17,Checking,TX_2025_05_005
+2025-05-07,Whole Foods,-57.12,Checking,TX_2025_05_006
+2025-05-22,Amazon,-57.47,Checking,TX_2025_05_007
+2025-05-26,Starbucks,-14.34,Checking,TX_2025_05_008
+2025-05-30,Tech Corp Payroll,3935.3,Checking,TX_2025_05_009
+2025-05-05,Uber,-19.97,Checking,TX_2025_05_010
+2025-05-15,Uber,-31.46,Checking,TX_2025_05_011
+2025-05-07,Transfer to Savings,-500.0,Checking,TX_2025_05_012
+2025-05-19,Tech Corp Payroll,3849.26,Checking,TX_2025_05_013
+2025-05-15,Starbucks,-7.0,Checking,TX_2025_05_014

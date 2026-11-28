@@ -70,13 +70,117 @@ BEGIN SELECT RAISE(ABORT, 'Source fields are immutable; edit classification over
 """
 
 
+# ---------------------------------------------------------------------------
+# Dev 2 additions (CMP-1112-D2-01). This block is new. The only other edits are in
+# connect() and clear_all_data(), each marked "Dev 2". No existing line was removed.
+#
+# In plain English:
+#   * These are extra tables Compass needs for evidence-backed numbers.
+#   * "IF NOT EXISTS" means: create it the first time, skip it every time after.
+#     So connect() can run this on every start-up safely.
+#   * No existing table is changed, so existing data and tests keep working.
+#   * REFERENCES links rows to other tables; SQLite refuses broken links
+#     (connect() switches that checking on).
+# ---------------------------------------------------------------------------
+DEV2_SCHEMA = """
+-- IMPORT_COVERAGE: which dates each import covers.
+--   Lets later code say "November is only partly loaded" instead of
+--   pretending November was cheap.
+--   Example: covered_start '2026-10-01', covered_end '2026-11-05'
+--            = Oct 1 through Nov 4 (the end date itself is NOT included).
+CREATE TABLE IF NOT EXISTS import_coverage (
+    import_id     TEXT PRIMARY KEY REFERENCES imports(id),
+    covered_start TEXT NOT NULL CHECK(covered_start GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]'),
+    covered_end   TEXT NOT NULL CHECK(covered_end   GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]'),
+    CHECK(covered_start < covered_end)
+);
+-- Coverage describes the source file, so like other source metadata it can't be edited.
+CREATE TRIGGER IF NOT EXISTS immutable_import_coverage
+BEFORE UPDATE ON import_coverage
+BEGIN SELECT RAISE(ABORT, 'Import coverage is immutable'); END;
+
+-- MERCHANT_ALIASES: rules that turn messy bank text into a clean merchant name.
+--   '%' means "anything here".
+--   Example: 'STARBUCKS%' matches 'STARBUCKS #1234' -> merchant 'Starbucks'.
+CREATE TABLE IF NOT EXISTS merchant_aliases (
+    pattern  TEXT PRIMARY KEY NOT NULL CHECK(length(trim(pattern)) > 0),
+    merchant TEXT NOT NULL CHECK(length(trim(merchant)) BETWEEN 1 AND 80)
+);
+
+-- CONVERSATIONS and MESSAGES: chat history with the assistant.
+--   Each answer is its own message, so evidence can point at exactly
+--   which answer used which transactions.
+CREATE TABLE IF NOT EXISTS conversations (
+    id         TEXT PRIMARY KEY NOT NULL,
+    started_at TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS messages (
+    id              TEXT PRIMARY KEY NOT NULL,
+    conversation_id TEXT NOT NULL REFERENCES conversations(id),
+    role            TEXT NOT NULL CHECK(role IN ('user','assistant','tool')),
+    content         TEXT NOT NULL,
+    created_at      TEXT NOT NULL
+);
+
+-- INSIGHTS: saved findings, e.g. "Coffee spending fell 50% in November".
+--   payload_json holds the details and must be valid JSON.
+CREATE TABLE IF NOT EXISTS insights (
+    id           TEXT PRIMARY KEY NOT NULL,
+    kind         TEXT NOT NULL,
+    period_start TEXT NOT NULL,
+    period_end   TEXT NOT NULL,
+    payload_json TEXT NOT NULL CHECK(json_valid(payload_json)),
+    created_at   TEXT NOT NULL
+);
+
+-- EVIDENCE: the receipts behind every number.
+--   Each row says "this insight / message / tool result used (or left out) this transaction".
+--   Example for "You spent $37.00 in October":
+--     ('tool_result', 'res_9b0d33e1aa42', 'T1', 'included', NULL)
+--     ('tool_result', 'res_9b0d33e1aa42', 'T5', 'excluded', 'transfer')
+--   owner_id can point at three different tables, so it can't have one
+--   REFERENCES rule; tests check those links instead.
+CREATE TABLE IF NOT EXISTS evidence (
+    id             INTEGER PRIMARY KEY,
+    owner_type     TEXT NOT NULL CHECK(owner_type IN ('insight','message','tool_result')),
+    owner_id       TEXT NOT NULL,
+    transaction_id TEXT NOT NULL REFERENCES transactions(id),
+    role           TEXT NOT NULL CHECK(role IN ('included','excluded')),
+    reason         TEXT
+);
+CREATE INDEX IF NOT EXISTS ix_evidence_owner ON evidence(owner_type, owner_id);
+CREATE INDEX IF NOT EXISTS ix_evidence_transaction ON evidence(transaction_id);
+
+-- TRANSACTION_MERCHANTS (a view = a saved query that looks like a table):
+--   the clean merchant name for each transaction, from merchant_aliases.
+--   If several patterns match, the longest (most specific) one wins.
+--   If none match, the bank description is used as-is.
+--   Example: 'STARBUCKS #1234' -> 'Starbucks';  'CORNER DELI' -> 'CORNER DELI'
+--   Done as a view so the existing transactions table doesn't change.
+CREATE VIEW IF NOT EXISTS transaction_merchants AS
+SELECT t.id AS transaction_id,
+       COALESCE(
+           (SELECT a.merchant FROM merchant_aliases a
+            WHERE t.description LIKE a.pattern
+            ORDER BY length(a.pattern) DESC, a.pattern
+            LIMIT 1),
+           t.description) AS merchant
+FROM transactions t;
+"""
+
+
 def connect(path: str | Path) -> sqlite3.Connection:
     if str(path) != ":memory:":
         Path(path).parent.mkdir(parents=True, exist_ok=True)
     connection = sqlite3.connect(str(path))
     connection.row_factory = sqlite3.Row
     connection.execute("PRAGMA foreign_keys = ON")
+    # Dev 2: stop if this SQLite build can't enforce links between tables.
+    if connection.execute("PRAGMA foreign_keys").fetchone()[0] != 1:
+        connection.close()
+        raise RuntimeError("SQLite foreign key enforcement could not be enabled")
     connection.executescript(SCHEMA)
+    connection.executescript(DEV2_SCHEMA)  # Dev 2: extra tables, created only if missing
     return connection
 
 
@@ -129,8 +233,17 @@ def clear_all_data(connection: sqlite3.Connection) -> None:
         raise ValueError("Finish the current database operation before clearing data.")
     connection.execute("PRAGMA secure_delete = ON")
     with connection:
+        # Dev 2: delete rows that POINT AT transactions/imports first,
+        # otherwise the foreign-key links would block the delete.
+        # Chat history and insights are derived from the user's money data, so they go too.
+        # merchant_aliases are naming rules, not personal records, so they stay.
+        connection.execute("DELETE FROM evidence")
+        connection.execute("DELETE FROM messages")
+        connection.execute("DELETE FROM conversations")
+        connection.execute("DELETE FROM insights")
         connection.execute("DELETE FROM transactions")
         connection.execute("DELETE FROM import_settings")
+        connection.execute("DELETE FROM import_coverage")
         connection.execute("DELETE FROM imports")
 
 
